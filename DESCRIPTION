@@ -14,4 +14,7 @@ Depends:
     R (>= 2.10)
 LazyData: true
 Imports: 
-    dplyr
+    dplyr,
+    ggplot2,
+    mgcv,
+    stats
