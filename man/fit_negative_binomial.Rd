@@ -9,7 +9,7 @@ fit_negative_binomial(
   time_data,
   by_factor = NULL,
   cooksConstant = 4,
-  plot_model = TRUE
+  return_plot = FALSE
 )
 }
 \arguments{
@@ -21,7 +21,7 @@ fit_negative_binomial(
 
 \item{cooksConstant}{(Optional) Specify the sensitivity to outliers. Lower values give higher sensitivity.}
 
-\item{plot_model}{(Optional) Boolean argument to plot the fitted values of the model}
+\item{return_plot}{(Optional) Boolean argument to return a ggplot2 plot object}
 }
 \value{
 A list containing
@@ -29,7 +29,27 @@ A list containing
 \item{data}{Dataframe object. A data frame with binded count_data, time_data, by_factor (if used), and fitted value from model}
 \item{cooks_distances}{Calculated cooks distances from model}
 \item{outliers}{Flagged outliers based on cooks distances and cooksConstant}
+\item{plot}{ggplot2 plot object of model fitted values}
 }
 \description{
 fit_negative_binomial
+}
+\examples{
+
+# Example dataset
+data("jh_data_daily_confirm")
+
+# Specify the count data to be the first 450 days of Illinois' daily Covid-19 cases
+count_data = jh_data_daily_confirm$Illinois[1:450]
+
+# Specify the time data to be the first 450 days
+time_data = jh_data_daily_confirm$date[1:450]
+
+# Add a "day of week" effect to the model
+by_factor = jh_data_daily_confirm$day_of_week[1:450]
+
+
+Illinois_negative_binomial = fit_negative_binomial(count_data, time_data,
+                                                   by_factor, return_plot = TRUE)
+
 }

@@ -5,7 +5,7 @@
 #' @param time_data Covariate of time data used in the model
 #' @param by_factor (Optional) Additional categorical covariate
 #' @param cooksConstant (Optional) Specify the sensitivity to outliers. Lower values give higher sensitivity.
-#' @param plot_model  (Optional) Boolean argument to plot the fitted values of the model
+#' @param return_plot  (Optional) Boolean argument to return a ggplot2 plot object
 #'
 #' @return
 #' A list containing
@@ -13,22 +13,50 @@
 #' \item{data}{Dataframe object. A data frame with binded count_data, time_data, by_factor (if used), and fitted value from model}
 #' \item{cooks_distances}{Calculated cooks distances from model}
 #' \item{outliers}{Flagged outliers based on cooks distances and cooksConstant}
+#' \item{plot}{ggplot2 plot object of model fitted values}
 #' @export
 #'
 #' @examples
-fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooksConstant = 4, plot_model = TRUE){
+#'
+#' # Example dataset
+#' data("jh_data_daily_confirm")
+#'
+#' # Specify the count data to be the first 450 days of Illinois' daily Covid-19 cases
+#' count_data = jh_data_daily_confirm$Illinois[1:450]
+#'
+#' # Specify the time data to be the first 450 days
+#' time_data = jh_data_daily_confirm$date[1:450]
+#'
+#' # Add a "day of week" effect to the model
+#' by_factor = jh_data_daily_confirm$day_of_week[1:450]
+#'
+#'
+#' Illinois_negative_binomial = fit_negative_binomial(count_data, time_data,
+#'                                                    by_factor, return_plot = TRUE)
+#'
+fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooksConstant = 4, return_plot = FALSE){
 
   # Adversarial user checks
+
+  # check count_data and time_data are of the same length
+  if(length(count_data) != length(time_data)){
+    stop("count_data and time_data are not of the same length")
+  }
+
+  # check count data is non-negative
+  if(min(count_data) < 0){
+    stop("count_data cannot have negative values")
+  }
+
+  # if by_factor is not null, check length of by factor
+
+  # if by_factor is not null, check type to see if it's coercible to factor
+
   TS_data <- data.frame(count_data, time_data)
 
   if(!is.null(by_factor)){
     TS_data <- cbind(TS_data, by_factor)
   }
-  # TS data needs 'day' and 'daily_confirmed'
-
-  # if by is not null, check TS_data for "by_factor" variable
-
-  # if by is vector, append TS_data with "by" variable
 
   # Model count data with negative binomial model with "by_factor"
 
@@ -41,18 +69,28 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
   if(is.null(by_factor)){
     nb_mod <- mgcv::gam(count_data ~
                           s(as.numeric(time_data), bs = 'cr', k = 20),
-                        method = "REML", data = TS_data, family = nb())
+                        method = "REML", data = TS_data, family = mgcv::nb())
   }
   cooksD = stats::cooks.distance(nb_mod) # Cooks distances for outlier detection
   outliers_nb = which(cooksD > cooksConstant*mean(cooksD))
 
 
   # predicted values for model with standard errors
-  output_nb_mod <- stats::predict(nb_mod,
-                           newdata = data.frame(time_data = TS_data$time_data,
-                                                by_factor = TS_data$by_factor),
-                           se.fit = T,
-                           type = "response")
+  if(!is.null(by_factor)){
+    output_nb_mod <- stats::predict(nb_mod,
+                                    newdata = data.frame(time_data = TS_data$time_data,
+                                                         by_factor = TS_data$by_factor),
+                                    se.fit = T,
+                                    type = "response")
+  }
+
+  if(is.null(by_factor)){
+    output_nb_mod <- stats::predict(nb_mod,
+                                    newdata = data.frame(time_data = TS_data$time_data),
+                                    se.fit = T,
+                                    type = "response")
+  }
+
 
   # Get fits, upper, and lower bounds
   fit_vals = output_nb_mod$fit
@@ -60,10 +98,10 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
 
 
   alpha = .05
-  fit_lwr = fit_vals - qnorm(1-alpha/2)*fit_sd
+  fit_lwr = fit_vals - stats::qnorm(1-alpha/2)*fit_sd
   fit_lwr[fit_lwr < 0] = 0 # lower bounds below 0 makes no sense to visualize
 
-  fit_upp = fit_vals + qnorm(1-alpha/2)*fit_sd
+  fit_upp = fit_vals + stats::qnorm(1-alpha/2)*fit_sd
 
   data.out = cbind(TS_data, fit_vals)
   data.new = cbind(TS_data, fit_vals, fit_lwr, fit_upp)
@@ -84,28 +122,30 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
   }
 
   # Plot model
-  if(plot_model){
+  if(return_plot){
     if(!is.null(by_factor)){
       wrap = TRUE
       plot_with_factor = TRUE
+    } else {
+      wrap = FALSE
+      plot_with_factor = FALSE
     }
 
     gg <- ggplot2::ggplot(data.new, ggplot2::aes(x = time_data, y = count_data))+
       {if(!wrap)ggplot2::geom_point()}+
       {if(!wrap)ggplot2::geom_point(data = TS_data[outliers_nb,],
-                                        aes(x = time_data, y = count_data),
-                                        color = 'firebrick')}+
+                                        ggplot2::aes(x = time_data, y = count_data),
+                                                     color = 'firebrick')}+
       {if(wrap)ggplot2::geom_point(data = select(TS_data, -by_factor), color = 'grey80')}+
-      {if(wrap)ggplot2::geom_point(aes(color = by_factor))}+
+      {if(wrap)ggplot2::geom_point(ggplot2::aes(color = by_factor))}+
       {if(wrap)ggplot2::facet_wrap(~by_factor)}+
       {if(wrap)ggplot2::geom_point(data = TS_data[outliers_nb,],
                                    ggplot2::aes(x = time_data, y = count_data),
-                                       color = 'firebrick')}+
+                                                color = 'firebrick')}+
       {if(plot_with_factor)ggplot2::geom_line(ggplot2::aes(x = time_data, y = fit_vals, color = by_factor), linewidth = 1)}+
       {if(!plot_with_factor)ggplot2::geom_line(ggplot2::aes(x = time_data, y = fit_vals), linewidth = 1, color = 'navyblue')}+
       {if(!plot_with_factor)ggplot2::geom_ribbon(ggplot2::aes(ymin = fit_lwr, ymax = fit_upp), alpha = .3, fill = 'skyblue')}
 
-      plot(gg)
     return(list(model = nb_mod, data = data.out, cooks_distances = cooksD, outliers = outliers_nb, plot = gg))
   }
   return(list(model = nb_mod, data = data.out, cooks_distances = cooksD, outliers = outliers_nb))
