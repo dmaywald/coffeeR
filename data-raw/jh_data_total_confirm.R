@@ -1,5 +1,5 @@
 ###########
-# code used to prepare `data/jh_data_daily_confirm` data set
+# code used to prepare `data/jh_data_total_confirm` data set
 # This file takes daily total confirmed US cases data from John Hopkins and writes .rda
 # of state by state daily confirmed cases.
 # Also removes time series of towns that are always 0 or cruise ships,
@@ -58,5 +58,20 @@ jh_data_total_confirm = dplyr::select(jh_data_total_confirm, -contains('Princess
 # Sum up states/territories for US total
 jh_data_total_confirm$US = jh_data_total_confirm %>% dplyr::select(-c(date, year, month, day_of_week)) %>% rowSums()
 
+# 'Year' and 'Month' are being read as an integer, I want it to be a factor.
+# Make sure factor levels make sense
+jh_data_total_confirm$year  = factor(jh_data_total_confirm$year,levels = c(2020:2023))
+
+jh_data_total_confirm$month = factor(jh_data_total_confirm$month,levels = c(1:12))
+
+# Similarly for 'day_of_week', I want this to be a factor.
+# Make sure factor level makes sense with paper
+jh_data_total_confirm$day_of_week = factor(jh_data_total_confirm$day_of_week,
+                                           levels =  c('Sun', 'Mon', 'Tue',
+                                                       'Wed', 'Thu',
+                                                       'Fri', 'Sat'))
+
+# Make date a Date
+jh_data_total_confirm$date = as.Date(jh_data_total_confirm$date)
 
 usethis::use_data(jh_data_total_confirm, overwrite = TRUE)
