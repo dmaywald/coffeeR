@@ -2,4 +2,5 @@
 
 export(fit_negative_binomial)
 export(fit_poisson)
+export(fit_qpois)
 import(dplyr)

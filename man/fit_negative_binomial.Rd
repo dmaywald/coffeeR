@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_negative_binomial.R
 \name{fit_negative_binomial}
 \alias{fit_negative_binomial}
-\title{fit_negative_binomial}
+\title{Negative Binomial Spline Regression}
 \usage{
 fit_negative_binomial(
   count_data,
@@ -32,7 +32,7 @@ A list containing
 \item{plot}{ggplot2 plot object of model fitted values}
 }
 \description{
-fit_negative_binomial
+Negative Binomial Spline Regression
 }
 \examples{
 

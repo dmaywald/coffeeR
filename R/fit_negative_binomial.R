@@ -1,5 +1,5 @@
 
-#' fit_negative_binomial
+#' Negative Binomial Spline Regression
 #'
 #' @param count_data Response vector of count data to be modeled
 #' @param time_data Covariate of time data used in the model
@@ -131,7 +131,7 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
                                     ggplot2::aes(x = time_data, y = count_data),
                                                  color = 'firebrick')}+
       # if by_factor was used, facet wrap plots by "by_factor"
-      {if(wrap)ggplot2::geom_point(data = select(TS_data, -by_factor), color = 'grey80')}+
+      {if(wrap)ggplot2::geom_point(data = dplyr::select(TS_data, -by_factor), color = 'grey80')}+
       {if(wrap)ggplot2::geom_point(ggplot2::aes(color = by_factor))}+
       {if(wrap)ggplot2::facet_wrap(~by_factor)}+
       {if(wrap)ggplot2::geom_point(data = TS_data[outliers_nb,],
