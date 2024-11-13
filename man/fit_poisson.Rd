@@ -8,7 +8,7 @@ fit_poisson(
   count_data,
   time_data,
   by_factor = NULL,
-  cooksConstant = 4,
+  cooks_constant = 4,
   return_plot = FALSE
 )
 }
@@ -19,7 +19,7 @@ fit_poisson(
 
 \item{by_factor}{(Optional) Additional categorical covariate}
 
-\item{cooksConstant}{(Optional) Specify the sensitivity to outliers. Lower values give higher sensitivity.}
+\item{cooks_constant}{(Optional) Specify the sensitivity to outliers. Lower values give higher sensitivity.}
 
 \item{return_plot}{(Optional) Boolean argument to return a ggplot2 plot object}
 }
@@ -28,7 +28,7 @@ A list containing
 \item{model}{mgcv::gam object. A spline model of count_data response variable and time_data covariate with by_factor as a possible factor}
 \item{data}{Dataframe object. A data frame with binded count_data, time_data, by_factor (if used), and fitted value from model}
 \item{cooks_distances}{Calculated cooks distances from model}
-\item{outliers}{Flagged outliers based on cooks distances and cooksConstant}
+\item{outliers}{Flagged outliers based on cooks distances and cooks_constant}
 \item{plot}{ggplot2 plot object of model fitted values}
 }
 \description{
