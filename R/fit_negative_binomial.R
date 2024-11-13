@@ -36,7 +36,7 @@
 #'
 fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooksConstant = 4, return_plot = FALSE){
 
-  # Adversarial user checks
+  ########## Adversarial user checks ######################################
 
   # check count_data and time_data are of the same length
   if(length(count_data) != length(time_data)){
@@ -54,28 +54,31 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
       stop("by_factor not of appropriate length. Needs to be the same length as count_data")
     }
   }
-  # if by_factor is not null, check type to see if it's coercible to factor
 
+  # Make TS_data for building gam model
   TS_data <- data.frame(count_data, time_data)
 
+  # add by_factor if it is not null
   if(!is.null(by_factor)){
     TS_data <- cbind(TS_data, by_factor)
   }
 
   # Model count data with negative binomial model with "by_factor"
-
   if(!is.null(by_factor)){
     nb_mod <- mgcv::gam(count_data ~
                             s(as.numeric(time_data), bs = 'cr', k = 20, by = by_factor) + by_factor,
                             method = "REML", data = TS_data, family = mgcv::nb())
   }
 
+  # if no by_factor was given, make model with only data given
   if(is.null(by_factor)){
     nb_mod <- mgcv::gam(count_data ~
                           s(as.numeric(time_data), bs = 'cr', k = 20),
                         method = "REML", data = TS_data, family = mgcv::nb())
   }
-  cooksD = stats::cooks.distance(nb_mod) # Cooks distances for outlier detection
+
+  # Cooks distances for outlier detection
+  cooksD = stats::cooks.distance(nb_mod)
   outliers_nb = which(cooksD > cooksConstant*mean(cooksD))
 
 
@@ -85,45 +88,31 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
                                     newdata = data.frame(time_data = TS_data$time_data,
                                                          by_factor = TS_data$by_factor),
                                     se.fit = T,
-                                    type = "response")
-  }
+                                    type = "response")}
 
   if(is.null(by_factor)){
     output_nb_mod <- stats::predict(nb_mod,
                                     newdata = data.frame(time_data = TS_data$time_data),
                                     se.fit = T,
-                                    type = "response")
-  }
+                                    type = "response")}
 
 
-  # Get fits, upper, and lower bounds
+  # Get fits, upper, and lower bounds for confidence intervals
   fit_vals = output_nb_mod$fit
   fit_sd  = output_nb_mod$se.fit
 
 
+  # Make confidence intervals
   alpha = .05
   fit_lwr = fit_vals - stats::qnorm(1-alpha/2)*fit_sd
   fit_lwr[fit_lwr < 0] = 0 # lower bounds below 0 makes no sense to visualize
 
   fit_upp = fit_vals + stats::qnorm(1-alpha/2)*fit_sd
 
+  # make visualization data and return data
   data.out = cbind(TS_data, fit_vals)
   data.new = cbind(TS_data, fit_vals, fit_lwr, fit_upp)
 
-
-
-
-  # This seems to only happen with Florida, it has many zeros in conjunction with high spikes.
-  # The other models can handle this, I'm replacing the model with a Poisson
-  if(max(fit_vals) > 5*max(count_data)){
-    # nb_dow_mod <- gam(daily_confirmed ~
-    #                     s(day, bs = 'cr', k = 20, by = day_of_week),
-    #                   method = "REML", data = TS_data, family = poisson)
-    # second_title_str = ": Neg. Bin. Fail! (Poisson Dist. w/ DOW)"
-    # daily_fit <- predict(nb_dow_mod,type = "response")
-
-    warning("Detected poor fits in Negative Bonimial Model. fit_poisson_model() is recommended")
-  }
 
   # Plot model
   if(return_plot){
@@ -135,17 +124,20 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
       plot_with_factor = FALSE
     }
 
+    # store ggplot object to return
     gg <- ggplot2::ggplot(data.new, ggplot2::aes(x = time_data, y = count_data))+
       {if(!wrap)ggplot2::geom_point()}+
       {if(!wrap)ggplot2::geom_point(data = TS_data[outliers_nb,],
-                                        ggplot2::aes(x = time_data, y = count_data),
-                                                     color = 'firebrick')}+
+                                    ggplot2::aes(x = time_data, y = count_data),
+                                                 color = 'firebrick')}+
+      # if by_factor was used, facet wrap plots by "by_factor"
       {if(wrap)ggplot2::geom_point(data = select(TS_data, -by_factor), color = 'grey80')}+
       {if(wrap)ggplot2::geom_point(ggplot2::aes(color = by_factor))}+
       {if(wrap)ggplot2::facet_wrap(~by_factor)}+
       {if(wrap)ggplot2::geom_point(data = TS_data[outliers_nb,],
                                    ggplot2::aes(x = time_data, y = count_data),
                                                 color = 'firebrick')}+
+      # add fitted values of model as line. If no "by_factor" was used, add confidence interval.
       {if(plot_with_factor)ggplot2::geom_line(ggplot2::aes(x = time_data, y = fit_vals, color = by_factor), linewidth = 1)}+
       {if(!plot_with_factor)ggplot2::geom_line(ggplot2::aes(x = time_data, y = fit_vals), linewidth = 1, color = 'navyblue')}+
       {if(!plot_with_factor)ggplot2::geom_ribbon(ggplot2::aes(ymin = fit_lwr, ymax = fit_upp), alpha = .3, fill = 'skyblue')}
