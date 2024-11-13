@@ -8,7 +8,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # coffeeR
 
-**Attention:** Because math rendering of .Rmd is not ideal, please see the enclosed pdf for correct rendering of all equations (an exact copy of this file)
 
 ## Package Description
 
