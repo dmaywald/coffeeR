@@ -34,17 +34,17 @@ A list containing
 Adjust Time Series Data for Outliers
 }
 \examples{
-#' # Example dataset
+# Example dataset
 data("jh_data_daily_confirm")
 
-# Specify the count data to be the first 300 days of Kansas' daily Covid-19 cases
-count_data = jh_data_daily_confirm$Kansas[1:300]
+# Specify the count data to be days 300-600 of Colorado's daily Covid-19 cases
+count_data = jh_data_daily_confirm$Colorado[300:600]
 
 # Specify the time data to be the first 300 days
-time_data = jh_data_daily_confirm$date[1:300]
+time_data = jh_data_daily_confirm$date[300:600]
 
 # Add a "day of week" effect to the model
-by_factor = jh_data_daily_confirm$day_of_week[1:300]
+by_factor = jh_data_daily_confirm$day_of_week[300:600]
 
-Kansas_data = adjust_outliers(count_data, time_data, by_factor, return_plot = TRUE)
+Colorado_data = adjust_outliers(count_data, time_data, by_factor, return_plot = TRUE)
 }
