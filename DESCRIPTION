@@ -16,6 +16,7 @@ LazyData: true
 Imports: 
     dplyr,
     ggplot2,
+    magrittr,
     methods,
     mgcv,
     stats
