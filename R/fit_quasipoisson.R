@@ -32,7 +32,7 @@
 #'
 #' New_York_qpois = fit_qpois(count_data, time_data, by_factor, return_plot = FALSE)
 #'
-fit_qpois <- function(count_data, time_data, by_factor = NULL, cook_constant = 4, return_plot = FALSE){
+fit_qpois <- function(count_data, time_data, by_factor = NULL, cooks_constant = 4, return_plot = FALSE){
 
   ########## Adversarial user checks ######################################
 

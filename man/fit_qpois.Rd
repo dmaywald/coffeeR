@@ -8,7 +8,7 @@ fit_qpois(
   count_data,
   time_data,
   by_factor = NULL,
-  cook_constant = 4,
+  cooks_constant = 4,
   return_plot = FALSE
 )
 }
@@ -19,9 +19,9 @@ fit_qpois(
 
 \item{by_factor}{(Optional) Additional categorical covariate}
 
-\item{return_plot}{(Optional) Boolean argument to return a ggplot2 plot object}
-
 \item{cooks_constant}{(Optional) Specify the sensitivity to outliers. Lower values give higher sensitivity.}
+
+\item{return_plot}{(Optional) Boolean argument to return a ggplot2 plot object}
 }
 \value{
 A list containing
