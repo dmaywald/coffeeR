@@ -1,4 +1,4 @@
-kappa_calc <- function(count_data, time_data, return_plot = FALSE){
+kappa_calc <- function(count_data){
 
   # Calculate a total count for empirical growth calculations
   total_count = cumsum(count_data)
