@@ -68,7 +68,7 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
 
   qpois_mod <- fit_qpois(count_data = count_data, time_data = time_data, by_factor = by_factor,
                          cooks_constant = cooks_constant, return_plot = FALSE)
-  # Get the outliers and replace with weighted average of 5 models
+  # Get the outliers and replace with weighted average of 3 models
   outliers1 = nb_mod$outliers
   outliers2 = pois_mod$outliers
   outliers3 = qpois_mod$outliers
