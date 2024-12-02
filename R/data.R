@@ -36,3 +36,21 @@
 #' }
 #' @source <https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv>
 "jh_data_daily_confirm"
+
+
+
+#' State Population - United States
+#'
+#' A processed data set of US Population by State from The United States Census Bureau
+#' Separated by state and Year 2020-203
+#'
+#' @format ## `state_population`
+#' A data frame with 4 rows and 54 columns:
+#' \describe{
+#'   \item{state/territory}{Population of State/Territory}
+#'   \item{US}{Population of US}
+#'   \item{year}{Year in numeric format}
+#'   ...
+#' }
+#' @source <https://www2.census.gov/programs-surveys/popest/tables/2020-2023/state/totals/NST-EST2023-POP.xlsx>
+"state_population"
