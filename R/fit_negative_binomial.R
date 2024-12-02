@@ -36,38 +36,14 @@
 #'
 fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks_constant = 4, return_plot = FALSE){
 
-  ########## Adversarial user checks ######################################
-
-  # check count_data and time_data are of the same length
-  if(length(count_data) != length(time_data)){
-    stop("count_data and time_data are not of the same length")
-  }
-
-  # check count data is non-negative
-  if(min(count_data) < 0){
-    stop("count_data cannot have negative values")
-  }
-
-  # if by_factor is not null, check length of by factor
-  if(!is.null(by_factor)){
-    if(length(by_factor) != length(count_data)){
-      stop("by_factor not of appropriate length. Needs to be the same length as count_data")
-    }
-  }
-
-  # Make TS_data for building gam model
-  TS_data <- data.frame(count_data, time_data)
-
-  # add by_factor if it is not null
-  if(!is.null(by_factor)){
-    TS_data <- cbind(TS_data, by_factor)
-  }
+  # Construct time series data
+  TS_data = make_ts_data(count_data, time_data, by_factor)
 
   # Model count data with negative binomial model with "by_factor"
   if(!is.null(by_factor)){
     nb_mod <- mgcv::gam(count_data ~
-                            s(as.numeric(time_data), bs = 'cr', k = 20, by = by_factor) + by_factor,
-                            method = "REML", data = TS_data, family = mgcv::nb())
+                          s(as.numeric(time_data), bs = 'cr', k = 20, by = by_factor) + by_factor,
+                        method = "REML", data = TS_data, family = mgcv::nb())
   }
 
   # if no by_factor was given, make model with only data given

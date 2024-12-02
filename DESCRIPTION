@@ -17,6 +17,8 @@ Imports:
     dplyr,
     ggplot2,
     magrittr,
+    MASS,
     methods,
     mgcv,
-    stats
+    stats,
+    utils

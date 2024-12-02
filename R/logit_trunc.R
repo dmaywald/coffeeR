@@ -8,7 +8,7 @@ logit_trunc <- function(x, low, high) {
     \(num) {
       # If low < x < high, return qlogis(x)
       if ((num > low) & (num < high)) {
-        return(qlogis(num))
+        return(stats::qlogis(num))
       }
       if (num <= low) {
       # if x <= low, return qlogis(low)
