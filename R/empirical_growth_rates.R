@@ -2,8 +2,8 @@
 #'
 #' @param count_data Response vector of Count Data
 #' @param time_data Covariate vector of Time Data
-#' @param num_train_days Constant. Represents the number of training days.
-#' @param num_test_days Constant. Represents the number of testing days. Use 0 test days for a full empirical growth rate model.
+#' @param num_train Constant. Represents the number of training data points.
+#' @param num_test Constant. Represents the number of testing data points. Use 0 test days for a full empirical growth rate model.
 #' @param population Constant. Represents the total population.
 #' @param susc_perc Constant between 0 and 1. Represents the percent of the population that is susceptible
 #' @param by_factor (Optional) Additional categorical covariate
@@ -28,8 +28,8 @@
 #' # Add a "day of week" effect to the model
 #' by_factor = jh_data_daily_confirm$day_of_week[200:400]
 #'
-#' num_train_days = 28
-#' num_test_days = 0
+#' num_train = 28
+#' num_test = 0
 #'
 #' # Get Florida Population and use .55 as susceptible population proportion
 #' population = state_population$Florida[1]
@@ -37,28 +37,31 @@
 #'
 #' Florida_emp_grow_rate = empirical_growth_rates(count_data = count_data,
 #'                                                time_data = time_data,
-#'                                                num_train_days = num_train_days,
-#'                                                num_test_days = num_test_days,
+#'                                                num_train = num_train,
+#'                                                num_test = num_test,
 #'                                                population = population,
 #'                                                susc_perc = susc_perc,
 #'                                                by_factor = by_factor)
-empirical_growth_rates <- function(count_data, time_data, num_train_days, num_test_days, population, susc_perc, by_factor = NULL){
+empirical_growth_rates <- function(count_data, time_data, num_train, num_test, population, susc_perc, by_factor = NULL){
 
   TS_data = make_ts_data(count_data, time_data, by_factor)
 
-  # If susc_perc is greater than 1, give warning.
-  if (susc_perc > 1){
-    warning("susc_perc is usually a number between 0 and 1.")
+  # Check to see if num_train and num_test makes sense
+  if (num_train + num_test > length(count_data)){
+    stop("Number of training and testing data points exceeds number of data points")
   }
 
-  # number of train days and test days should be less than the number of days in TS_data
+  # If susc_perc is greater than 1, give warning.
+  if (susc_perc > 1){
+    warning("susc_perc is usually a number between 0 and 1. For example, 55% should be entered as .55")
+  }
 
 
   last_day = nrow(TS_data)
 
-  train_days = (last_day - (num_test_days + num_train_days - 1)):(last_day - num_test_days)
+  train_days = (last_day - (num_test + num_train - 1)):(last_day - num_test)
 
-  test_days  = (last_day - (num_test_days - 1)):last_day
+  test_days  = (last_day - (num_test - 1)):last_day
   train_data = TS_data[train_days, ]
   test_data  = TS_data[test_days, ]
 
@@ -97,7 +100,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train_days, num_te
   # Backward step wise
   k_trend_mod_back = MASS::stepAIC(k_trend_mod, direction = "backward", trace = FALSE)
 
-  if (num_test_days <= 0) {
+  if (num_test <= 0) {
     pred_data = X_train
   } else {
     pred_data = rbind(X_train, X_test)
@@ -115,7 +118,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train_days, num_te
   }
 
   mean_train = mean(
-    TS_data$count_data[(last_day - (num_test_days + 6)):(last_day - num_test_days)])
+    TS_data$count_data[(last_day - (num_test + 6)):(last_day - num_test)])
 
   true_sucs_0 = susc_perc*population
 
@@ -126,17 +129,17 @@ empirical_growth_rates <- function(count_data, time_data, num_train_days, num_te
     )
   }
 
-  if(num_test_days > 0){
-    k_const_0 = sapply((last_day - (num_test_days - 1)):last_day, k_const_calc_0)
+  if(num_test > 0){
+    k_const_0 = sapply((last_day - (num_test - 1)):last_day, k_const_calc_0)
   } else {
     # If number of testing days is 0, calculate k_const_0 and k_const_calc_dynam over training data
-    k_const_0 = sapply((last_day - (num_train_days - 1)):last_day, k_const_calc_0)
+    k_const_0 = sapply((last_day - (num_train - 1)):last_day, k_const_calc_0)
   }
 
-  if(num_test_days > 0){
+  if(num_test > 0){
     test_data$kappa_const = k_const_0
     test_data$kappa_trend = k_trend_mod_back_fits[
-      (length(k_trend_mod_back_fits) - (num_test_days - 1)):length(k_trend_mod_back_fits)
+      (length(k_trend_mod_back_fits) - (num_test - 1)):length(k_trend_mod_back_fits)
     ]
 
     # Equation 14 requires an empirical growth rate approximation over the testing data with only
@@ -153,7 +156,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train_days, num_te
     # Fill out (now missing) values in training data so we can rbind it with testing data
     # since we need last 7 days of training data in step 7
     train_data$kappa_const = 0
-    train_data$kappa_trend = k_trend_mod_back_fits[1:num_train_days]
+    train_data$kappa_trend = k_trend_mod_back_fits[1:num_train]
     train_data$kappa_dow   = 0
 
     data_out = rbind(train_data, test_data)
@@ -163,7 +166,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train_days, num_te
 
   } else { # Repeat the process, but with the training data (if number of test data is 0)
     train_data$kappa_const = k_const_0
-    train_data$kappa_trend = k_trend_mod_back_fits[1:num_train_days]
+    train_data$kappa_trend = k_trend_mod_back_fits[1:num_train]
 
     X_train_dow           = data.frame(stats::model.matrix(~ time_data + by_factor, data = train_data))
     names(X_train_dow)    = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns

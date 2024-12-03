@@ -7,8 +7,8 @@
 empirical_growth_rates(
   count_data,
   time_data,
-  num_train_days,
-  num_test_days,
+  num_train,
+  num_test,
   population,
   susc_perc,
   by_factor = NULL
@@ -19,9 +19,9 @@ empirical_growth_rates(
 
 \item{time_data}{Covariate vector of Time Data}
 
-\item{num_train_days}{Constant. Represents the number of training days.}
+\item{num_train}{Constant. Represents the number of training data points.}
 
-\item{num_test_days}{Constant. Represents the number of testing days. Use 0 test days for a full empirical growth rate model.}
+\item{num_test}{Constant. Represents the number of testing data points. Use 0 test days for a full empirical growth rate model.}
 
 \item{population}{Constant. Represents the total population.}
 
@@ -51,8 +51,8 @@ time_data = jh_data_daily_confirm$date[200:400]
 # Add a "day of week" effect to the model
 by_factor = jh_data_daily_confirm$day_of_week[200:400]
 
-num_train_days = 28
-num_test_days = 0
+num_train = 28
+num_test = 0
 
 # Get Florida Population and use .55 as susceptible population proportion
 population = state_population$Florida[1]
@@ -60,8 +60,8 @@ susc_perc = .55
 
 Florida_emp_grow_rate = empirical_growth_rates(count_data = count_data,
                                                time_data = time_data,
-                                               num_train_days = num_train_days,
-                                               num_test_days = num_test_days,
+                                               num_train = num_train,
+                                               num_test = num_test,
                                                population = population,
                                                susc_perc = susc_perc,
                                                by_factor = by_factor)
