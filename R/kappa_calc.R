@@ -7,6 +7,9 @@ kappa_calc <- function(count_data){
   last_day = length(count_data)
   kappa_orig = total_count[2:last_day]/total_count[1:last_day-1] - 1
 
+  # Replace Nan's with Inf
+  kappa_orig[is.nan(kappa_orig)] = Inf
+
   # append kappa_orig with a mean of the first few entries in order to have an empirical growth rate for the first day.
   kappa_orig = c(mean(utils::head(kappa_orig)), kappa_orig)
 

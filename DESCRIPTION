@@ -20,5 +20,6 @@ Imports:
     MASS,
     methods,
     mgcv,
+    reshape2,
     stats,
     utils

@@ -1,4 +1,4 @@
-#' Title
+#' Empirical Growth Rate Calculation
 #'
 #' @param count_data Response vector of Count Data
 #' @param time_data Covariate vector of Time Data
@@ -132,7 +132,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
   if(num_test > 0){
     k_const_0 = sapply((last_day - (num_test - 1)):last_day, k_const_calc_0)
   } else {
-    # If number of testing days is 0, calculate k_const_0 and k_const_calc_dynam over training data
+    # If number of testing days is 0, calculate k_const_0 over training data
     k_const_0 = sapply((last_day - (num_train - 1)):last_day, k_const_calc_0)
   }
 

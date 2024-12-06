@@ -1,6 +1,6 @@
 #' Accept-Reject Method with the Inverse Distance function.
 #'
-#' @param n Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Used in Kappa_Forecast function
+#' @param n Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Drawn samples are used in Kappa_Forecast function
 #' @param TS_test_data Testing Time Series data. See example.
 #' @param TS_train_data Training Time Series data. See example.
 #' @param eta_bounds bounds for eta. Typically c(0,1)
@@ -80,7 +80,7 @@ sample_inv_dist <- function(n, TS_test_data, TS_train_data, eta_bounds, omega_bo
 
   # if no accept constant is given, calculate one
   if(is.null(accept_const)){
-    accept_const = calc_accept_const(eta_bounds, omega_bounds, phi_bounds, N = 25000, TS_test_data, kappa_const_dow, eta_coeff, num_test)
+    accept_const = calc_accept_const(eta_bounds, omega_bounds, phi_bounds, N = 50000, TS_test_data, kappa_const_dow, eta_coeff, num_test)
   }
 
   z <- matrix(nrow = n, ncol = 3)
@@ -104,9 +104,9 @@ sample_inv_dist <- function(n, TS_test_data, TS_train_data, eta_bounds, omega_bo
   stopp = FALSE
 
   while(!stopp){
-    z_val = c(runif(1, eta_low, eta_high),
-              runif(1, omega_low, omega_high),
-              runif(1, phi_low, phi_high))
+    z_val = c(stats::runif(1, eta_low, eta_high),
+              stats::runif(1, omega_low, omega_high),
+              stats::runif(1, phi_low, phi_high))
     # print(eta_bounds)
     # print(omega_bounds)
     # print(phi_bounds)
@@ -114,7 +114,7 @@ sample_inv_dist <- function(n, TS_test_data, TS_train_data, eta_bounds, omega_bo
     # print(inv_dist(z_val, TS_test_data, kappa_const_dow, eta_coeff, num_test))
     # print(accept_const)
     # print(gen_val)
-    if(runif(1,0,1) <= inv_dist(z_val, TS_test_data, kappa_const_dow, eta_coeff, num_test) / (accept_const * gen_val)){
+    if(stats::runif(1,0,1) <= inv_dist(z_val, TS_test_data$kappa_star, TS_test_data$kappa_orig, kappa_const_dow, eta_coeff, num_test) / (accept_const * gen_val)){
       z[i, ] = z_val
       stopp = TRUE
     }
@@ -125,5 +125,8 @@ sample_inv_dist <- function(n, TS_test_data, TS_train_data, eta_bounds, omega_bo
     }
     }
   }
+
+  z = data.frame(z)
+  colnames(z) <- c('eta', 'omega', 'phi')
   return(z)
 }

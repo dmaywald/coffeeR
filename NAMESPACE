@@ -2,6 +2,7 @@
 
 export("%>%")
 export(adjust_outliers)
+export(coffee_forecast)
 export(empirical_growth_rates)
 export(fit_negative_binomial)
 export(fit_poisson)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/empirical_growth_rates.R
 \name{empirical_growth_rates}
 \alias{empirical_growth_rates}
-\title{Title}
+\title{Empirical Growth Rate Calculation}
 \usage{
 empirical_growth_rates(
   count_data,
@@ -35,7 +35,7 @@ A list containing
 \item{emp_grow_mod}{Model used to calculate empirical growth rate estimates}
 }
 \description{
-Title
+Empirical Growth Rate Calculation
 }
 \examples{
 # Example dataset

@@ -16,7 +16,7 @@ sample_inv_dist(
 )
 }
 \arguments{
-\item{n}{Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Used in Kappa_Forecast function}
+\item{n}{Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Drawn samples are used in Kappa_Forecast function}
 
 \item{TS_test_data}{Testing Time Series data. See example.}
 
