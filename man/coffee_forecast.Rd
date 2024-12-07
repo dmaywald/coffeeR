@@ -64,7 +64,7 @@ num_train = 28
 num_test = 14
 num_forecast = 7
 
-# Get Florida Population and use .55 as susceptible population proportion
+# Get Pennsylvania Population and use .55 as susceptible population proportion
 population = state_population$Pennsylvania[1]
 susc_perc = .55
 total_cases = sum(jh_data_daily_confirm$Pennsylvania[1:550])
@@ -102,7 +102,7 @@ Penn_emp_grow_rate = empirical_growth_rates(count_data = count_data,
 
 emp_grow_model = Penn_emp_grow_rate$emp_grow_mod
 
-# Get time data corresponding to forecastfuture values
+# Get time data corresponding to forecast values
 first_pred_date = time_data[length(time_data)] + 1
 last_pred_date = time_data[length(time_data)] + num_forecast
 

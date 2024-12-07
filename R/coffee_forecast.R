@@ -38,7 +38,7 @@
 #' num_test = 14
 #' num_forecast = 7
 #'
-#' # Get Florida Population and use .55 as susceptible population proportion
+#' # Get Pennsylvania Population and use .55 as susceptible population proportion
 #' population = state_population$Pennsylvania[1]
 #' susc_perc = .55
 #' total_cases = sum(jh_data_daily_confirm$Pennsylvania[1:550])
@@ -193,7 +193,7 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     if(nrow(TS_data) > 7){
       eta_coeff = stats::median(TS_data$kappa_star[(nrow(TS_data)-6):nrow(TS_data)])
     } else {
-      eta_coeff = stats::median(tail(TS_data$kappa_star))
+      eta_coeff = stats::median(utils::tail(TS_data$kappa_star))
     }
 
     if(any(is.na(random_vectors))){

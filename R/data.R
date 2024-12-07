@@ -65,9 +65,26 @@
 #' @format ## `pennsylvania_random_vectors_example`
 #' A data frame with 100 rows and 3 columns:
 #' \describe{
-#'   \item{eta}{100 random eta variables. Used in coffee_forecast.}
-#'   \item{omega}{100 random omega variables. Used in coffee_forecast.}
-#'   \item{phi}{100 random phi variables. USed in coffee_forecast.}
+#'   \item{eta}{100 random eta variables. Used in coffee_forecast/coffee_method.}
+#'   \item{omega}{100 random omega variables. Used in coffee_forecast/coffee_method.}
+#'   \item{phi}{100 random phi variables. USed in coffee_forecast/coffee_method.}
 #'   ...
 #' }
 "pennsylvania_random_vectors_example"
+
+
+
+#' New Mexico Random Vector Example
+#'
+#' A set of 100 random vectors drawn from the joint pdf defined by the inverse distance function.
+#' Uses empirical growth data generated from the first 273 days of New Mexico Covid-19 data.
+#'
+#' @format ## `new_mexico_random_vectors_example`
+#' A data frame with 100 rows and 3 columns:
+#' \describe{
+#'   \item{eta}{100 random eta variables. Used in coffee_forecast/coffee_method.}
+#'   \item{omega}{100 random omega variables. Used in coffee_forecast/coffee_method.}
+#'   \item{phi}{100 random phi variables. USed in coffee_forecast/coffee_method.}
+#'   ...
+#' }
+"new_mexico_random_vectors_example"

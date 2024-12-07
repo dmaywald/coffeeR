@@ -21,7 +21,7 @@ empirical_growth_rates(
 
 \item{num_train}{Constant. Represents the number of training data points.}
 
-\item{num_test}{Constant. Represents the number of testing data points. Use 0 test days for a full empirical growth rate model.}
+\item{num_test}{Constant. Represents the number of testing data points. Use num_train/num_test = 0 for model employed in coffee_forecast()}
 
 \item{population}{Constant. Represents the total population.}
 

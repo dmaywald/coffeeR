@@ -16,17 +16,18 @@ sample_inv_dist(
 )
 }
 \arguments{
-\item{n}{Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Drawn samples are used in Kappa_Forecast function}
+\item{n}{Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function.
+Drawn samples are used in Drawn samples are used in coffee_method/coffee_forecast functions}
 
 \item{TS_test_data}{Testing Time Series data. See example.}
 
 \item{TS_train_data}{Training Time Series data. See example.}
 
-\item{eta_bounds}{bounds for eta. Typically c(0,1)}
+\item{eta_bounds}{Bounds for random variable eta. Typically c(0,1)}
 
-\item{omega_bounds}{bounds for omega. Typically c(1, 1.5*num_forecast)}
+\item{omega_bounds}{Bounds for random variable omega. Typically c(1,T) for T = number of future values to predict.}
 
-\item{phi_bounds}{bounds for phi. Typically of form (1 - a, 1 + a) for some 0 < a < 1.}
+\item{phi_bounds}{Bounds for random variable phi. Typically of form (1 - a, 1 + a) for some 0 < a < 1.}
 
 \item{max_draws}{Max number of draws for accept-reject method before a force exit.}
 

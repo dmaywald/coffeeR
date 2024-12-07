@@ -1,11 +1,12 @@
 #' Accept-Reject Method with the Inverse Distance function.
 #'
-#' @param n Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function. Drawn samples are used in Kappa_Forecast function
+#' @param n Number of samples "(eta, omega, phi)" to draw from the pdf defined by the inverse distance function.
+#'  Drawn samples are used in Drawn samples are used in coffee_method/coffee_forecast functions
 #' @param TS_test_data Testing Time Series data. See example.
 #' @param TS_train_data Training Time Series data. See example.
-#' @param eta_bounds bounds for eta. Typically c(0,1)
-#' @param omega_bounds bounds for omega. Typically c(1, 1.5*num_forecast)
-#' @param phi_bounds bounds for phi. Typically of form (1 - a, 1 + a) for some 0 < a < 1.
+#' @param eta_bounds Bounds for random variable eta. Typically c(0,1)
+#' @param omega_bounds Bounds for random variable omega. Typically c(1,T) for T = number of future values to predict.
+#' @param phi_bounds Bounds for random variable phi. Typically of form (1 - a, 1 + a) for some 0 < a < 1.
 #' @param max_draws Max number of draws for accept-reject method before a force exit.
 #' @param accept_const (Optional). Accept-Reject constant. If left NULL, an accept-reject constant will be calculated.
 #'

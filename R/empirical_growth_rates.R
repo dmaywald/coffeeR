@@ -3,7 +3,7 @@
 #' @param count_data Response vector of Count Data
 #' @param time_data Covariate vector of Time Data
 #' @param num_train Constant. Represents the number of training data points.
-#' @param num_test Constant. Represents the number of testing data points. Use 0 test days for a full empirical growth rate model.
+#' @param num_test Constant. Represents the number of testing data points. Use num_train/num_test = 0 for model employed in coffee_forecast()
 #' @param population Constant. Represents the total population.
 #' @param susc_perc Constant between 0 and 1. Represents the percent of the population that is susceptible
 #' @param by_factor (Optional) Additional categorical covariate
@@ -45,6 +45,19 @@
 empirical_growth_rates <- function(count_data, time_data, num_train, num_test, population, susc_perc, by_factor = NULL){
 
   TS_data = make_ts_data(count_data, time_data, by_factor)
+
+  if(num_train == 0 & num_test == 0){
+    stop("Both num_train and num_test cannot be 0")
+  }
+
+  # If either supplied num_train/num_test are 0, then set num_train to be the non-zero option
+  # and set num_test to be 0
+  if(num_train == 0 | num_test == 0){
+    num_train = max(num_train, num_test)
+    num_test = 0
+  }
+
+
 
   # Check to see if num_train and num_test makes sense
   if (num_train + num_test > length(count_data)){
@@ -146,7 +159,9 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
     mean_train = mean(utils::tail(TS_data$count_data))
   }
 
-
+  if (length(population) > 1) {
+    stop("More than one population value found")
+  }
   true_sucs_0 = susc_perc * population
 
   k_const_calc_0 <- function(t){
