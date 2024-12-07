@@ -117,6 +117,14 @@ attack_rate_bounds = c(.4, .7)
 
 return_plot = TRUE
 
-Penn_forecast = coffee_forecast(TS_data, emp_grow_model, population, total_cases, random_vectors,
-                                pred_time_data, pred_by_factor, attack_rate_bounds, return_plot)
+Penn_forecast = coffee_forecast(TS_data,
+                                emp_grow_model,
+                                population,
+                                total_cases,
+                                random_vectors,
+                                pred_time_data,
+                                pred_by_factor,
+                                attack_rate_bounds,
+                                return_plot)
+
 }

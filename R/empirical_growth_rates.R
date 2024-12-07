@@ -76,22 +76,45 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
   test_data$kappa_orig = kappa_vals$kappa_orig[test_days]
 
 
-  # Use cook distances for weights of unweighted regression as weights for kappa_trend model
-  k_trend_unweight_mod <- stats::lm(kappa_star ~ time_data + by_factor, data = train_data)
-  cooks_weights = 1/stats::cooks.distance(k_trend_unweight_mod)
+  if(!is.null(by_factor)){
+    # Use cook distances for weights of unweighted regression as weights for kappa_trend model
+    k_trend_unweight_mod <- stats::lm(kappa_star ~ time_data + by_factor, data = train_data)
+    cooks_weights = 1/stats::cooks.distance(k_trend_unweight_mod)
 
-  # They use variable selection to (possibly) reduce some of the predictors above.
+    # They use variable selection to (possibly) reduce some of the predictors above.
 
-  # I will do stepwise regression for variable selection with AIC since we care more about
-  # prediction over model simplification
-  # Encode dummy variables:
-  X_train        = data.frame(stats::model.matrix( ~ time_data + by_factor, data = train_data))
-  names(X_train) = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
-  y_train        = train_data$kappa_star
+    # I will do stepwise regression for variable selection with AIC since we care more about
+    # prediction over model simplification
+    # Encode dummy variables:
+    X_train        = data.frame(stats::model.matrix( ~ time_data + by_factor, data = train_data))
+    names(X_train) = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
+    y_train        = train_data$kappa_star
 
-  X_test         = data.frame(stats::model.matrix( ~ time_data + by_factor, data = test_data))
-  names(X_test)  = c("Intercept", "time_data", levels(test_data$by_factor)[-1]) # Rename columns
-  y_test         = test_data$kappa_star
+    X_test         = data.frame(stats::model.matrix( ~ time_data + by_factor, data = test_data))
+    names(X_test)  = c("Intercept", "time_data", levels(test_data$by_factor)[-1]) # Rename columns
+    y_test         = test_data$kappa_star
+  }
+
+  if(is.null(by_factor)){
+    # Use cook distances for weights of unweighted regression as weights for kappa_trend model
+    k_trend_unweight_mod <- stats::lm(kappa_star ~ time_data, data = train_data)
+    cooks_weights = 1/stats::cooks.distance(k_trend_unweight_mod)
+
+    # They use variable selection to (possibly) reduce some of the predictors above.
+
+    # I will do stepwise regression for variable selection with AIC since we care more about
+    # prediction over model simplification
+    # Encode dummy variables:
+    X_train        = data.frame(stats::model.matrix( ~ time_data, data = train_data))
+    names(X_train) = c("Intercept", "time_data") # Rename columns
+    y_train        = train_data$kappa_star
+
+    X_test         = data.frame(stats::model.matrix( ~ time_data, data = test_data))
+    names(X_test)  = c("Intercept", "time_data") # Rename columns
+    y_test         = test_data$kappa_star
+  }
+
+
 
   # Initial model object
   k_trend_mod <- stats::lm(y_train ~ .-1, data = X_train, weights = cooks_weights) # -1 Since i've already baked in the intercept
@@ -117,8 +140,12 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
     keep_predictors_back = names(k_trend_mod_back$"model")[-1]
   }
 
-  mean_train = mean(
-    TS_data$count_data[(last_day - (num_test + 6)):(last_day - num_test)])
+  if(nrow(TS_data) > 7){
+    mean_train = mean(TS_data$count_data[(last_day - (num_test + 6)):(last_day - num_test)])
+  } else {
+    mean_train = mean(utils::tail(TS_data$count_data))
+  }
+
 
   true_sucs_0 = susc_perc * population
 
@@ -146,11 +173,20 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
     # the days of week taken into affect. This will be done by setting the days and intercept column
     # of the testing data design matrix to 0 and predicting with the backward stepwise regression model
 
-    X_test_dow           = data.frame(stats::model.matrix(~ time_data + by_factor, data = test_data))
-    names(X_test_dow)    = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
-    X_test_dow$Intercept = 0
-    X_test_dow$day       = 0
-    test_data$kappa_dow  = stats::predict(k_trend_mod_back, X_test_dow)
+    if(!is.null(by_factor)){
+      X_test_dow           = data.frame(stats::model.matrix(~ time_data + by_factor, data = test_data))
+      names(X_test_dow)    = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
+      X_test_dow$Intercept = 0
+      X_test_dow$time_data = 0
+      test_data$kappa_dow  = stats::predict(k_trend_mod_back, X_test_dow)
+    } else {
+      X_test_dow           = data.frame(stats::model.matrix(~ time_data, data = test_data))
+      names(X_test_dow)    = c("Intercept", "time_data") # Rename columns
+      X_test_dow$Intercept = 0
+      X_test_dow$time_data = 0
+      test_data$kappa_dow  = stats::predict(k_trend_mod_back, X_test_dow)
+    }
+
 
 
     # Fill out (now missing) values in training data so we can rbind it with testing data
@@ -168,11 +204,21 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
     train_data$kappa_const = k_const_0
     train_data$kappa_trend = k_trend_mod_back_fits[1:num_train]
 
-    X_train_dow           = data.frame(stats::model.matrix(~ time_data + by_factor, data = train_data))
-    names(X_train_dow)    = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
-    X_train_dow$Intercept = 0
-    X_train_dow$day       = 0
-    train_data$kappa_dow  = stats::predict(k_trend_mod_back, X_train_dow)
+    if(!is.null(by_factor)){
+      X_train_dow           = data.frame(stats::model.matrix(~ time_data + by_factor, data = train_data))
+      names(X_train_dow)    = c("Intercept", "time_data", levels(train_data$by_factor)[-1]) # Rename columns
+      X_train_dow$Intercept = 0
+      X_train_dow$time_data = 0
+      train_data$kappa_dow  = stats::predict(k_trend_mod_back, X_train_dow)
+
+    } else {
+
+      X_train_dow           = data.frame(stats::model.matrix(~ time_data, data = train_data))
+      names(X_train_dow)    = c("Intercept", "time_data") # Rename columns
+      X_train_dow$Intercept = 0
+      X_train_dow$time_data = 0
+      train_data$kappa_dow  = stats::predict(k_trend_mod_back, X_train_dow)
+    }
 
     data_out = train_data
 

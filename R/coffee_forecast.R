@@ -76,7 +76,7 @@
 #'
 #' emp_grow_model = Penn_emp_grow_rate$emp_grow_mod
 #'
-#' # Get time data corresponding to forecastfuture values
+#' # Get time data corresponding to forecast values
 #' first_pred_date = time_data[length(time_data)] + 1
 #' last_pred_date = time_data[length(time_data)] + num_forecast
 #'
@@ -112,6 +112,11 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
   # of outlier adjusted reported cases over the last 28 days.
   num_zero_reports = sum(TS_data$count_data == 0)
   num_forecast = length(pred_time_data)
+
+  if(nrow(TS_data) < length(pred_time_data)){
+    warning("More pred_time_data than training data in TS_data. Forecast will be shortened.")
+  }
+
   pred_time_data = as.numeric(pred_time_data)
   pred_time_data = pred_time_data - pred_time_data[1] + TS_data$time_data[nrow(TS_data)] + 1
 
@@ -127,16 +132,55 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     }
   } else {
     # Make forecast data
-    pred_data = data.frame(stats::model.matrix( ~ pred_time_data + pred_by_factor))
-    names(pred_data)  = c("Intercept", "time_data", levels(TS_data$by_factor)[-1]) # Rename columns
+    # If pred_by_factor is null, make sure that emp_grow_model is able to predict on future data
+    if(is.null(pred_by_factor)){
+      pred_data = data.frame(stats::model.matrix( ~ pred_time_data))
+      names(pred_data)  = c("Intercept", "time_data")
 
 
-    kappa_trend = stats::predict(emp_grow_model, pred_data)
+      kappa_trend = tryCatch(stats::predict(emp_grow_model, pred_data),
+                             error = function(e) e,
+                             warning = function(w) w)
+
+      if(methods::is(kappa_trend, "error")){
+        stop("Error occured fitting emp_grow_model to prediction data. Most likely error occured to mismatched by_factor predictor.")
+      }
+
+    }
+
+    if(!is.null(pred_by_factor)){
+      pred_data = data.frame(stats::model.matrix( ~ pred_time_data + pred_by_factor))
+
+      if(is.null(TS_data$by_factor)){
+        warning("No by_factor found in TS_data.")
+        new_names = names(emp_grow_model$model)
+        new_names = new_names[-1]
+
+        if (any(new_names == "(weights)")) {
+          new_names = new_names[-which(new_names == "(weights)")]
+        }
+        names(pred_data) = new_names
+      } else {
+        names(pred_data)  = c("Intercept", "time_data", levels(TS_data$by_factor)[-1]) # Rename columns
+      }
+
+      kappa_trend = tryCatch(stats::predict(emp_grow_model, pred_data),
+                             error = function(e) e,
+                             warning = function(w) w)
+
+      if(methods::is(kappa_trend, "error")){
+        stop("Error occured fitting emp_grow_model to prediction data. Most likely error occured to mismatched by_factor predictor.")
+      }
+
+    }
 
     # Do Step 6 to compute k_const_dow replacing T_train with last_day in equations 11 and 12
     # Mean confirmed daily cases over the last week of the training data
-    confirmed_mean_train = mean(TS_data$count_data[(nrow(TS_data)-6):nrow(TS_data)])
-
+    if(nrow(TS_data) > 7){
+      confirmed_mean_train = mean(TS_data$count_data[(nrow(TS_data)-6):nrow(TS_data)])
+    } else {
+      confirmed_mean_train = mean(utils::tail(TS_data$count_data))
+    }
 
     k_const = rep(dplyr::last(TS_data$kappa_const), num_forecast)
 
@@ -145,7 +189,12 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
 
     # Compute k_forecast following equation 13
     # Define eta_star function of equation 15
-    eta_coeff = stats::median(TS_data$kappa_star[(nrow(TS_data)-6):nrow(TS_data)])
+
+    if(nrow(TS_data) > 7){
+      eta_coeff = stats::median(TS_data$kappa_star[(nrow(TS_data)-6):nrow(TS_data)])
+    } else {
+      eta_coeff = stats::median(tail(TS_data$kappa_star))
+    }
 
     if(any(is.na(random_vectors))){
       num_na = length(which(is.na(random_vectors$eta)))
@@ -162,6 +211,10 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
       warning("Forecasts made by COFFEE method depends on having an adequeate amount of random samples from the inverse distance function. \
     Increase number of random vectors to (at least) match the number of future Forecasts")
     }
+
+    num_forecast = min(num_forecast, nrow(TS_data))
+    pred_time_data = pred_time_data[1:num_forecast]
+    pred_by_factor = pred_by_factor[1:num_forecast]
 
     kappa_forecasts = sapply(1:num_random_vector, \(idx){kappa_forecast_t(t = 1:num_forecast,
                                                                           eta = random_vectors$eta[idx],
