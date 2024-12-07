@@ -78,7 +78,6 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
   within(qpois_mod, rm(data))
 
   adjusted_data = TS_data$count_data
-  adjusted_total = cumsum(adjusted_data)
 
   if(length(out3) > 0){
     for (num in out3) {
@@ -87,6 +86,8 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
       adjusted_data[num] = round(weighted_average)
     }
   }
+
+  adjusted_total = cumsum(adjusted_data)
 
 
   data.out = cbind(TS_data, adjusted_data, adjusted_total)
