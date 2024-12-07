@@ -120,7 +120,7 @@ empirical_growth_rates <- function(count_data, time_data, num_train, num_test, p
   mean_train = mean(
     TS_data$count_data[(last_day - (num_test + 6)):(last_day - num_test)])
 
-  true_sucs_0 = susc_perc*population
+  true_sucs_0 = susc_perc * population
 
   k_const_calc_0 <- function(t){
     temp = mean_train / (((true_sucs_0  - TS_data$total_count[t - 1]) / (true_sucs_0))*(TS_data$total_count[t - 1]))

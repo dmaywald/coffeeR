@@ -60,13 +60,9 @@
 #' omega_bounds = c(1, 10)
 #' phi_bounds = c(.5,1.5)
 #'
-#' random_vectors = sample_inv_dist(n = 20,
-#'                                  TS_test_data = TS_test_data,
-#'                                  TS_train_data = TS_train_data,
-#'                                  eta_bounds = eta_bounds,
-#'                                  omega_bounds = omega_bounds,
-#'                                  phi_bounds = phi_bounds)
-#'
+#' # Get random vector data
+#' data("pennsylvania_random_vectors_example")
+#' random_vectors = pennsylvania_random_vectors_example
 #'
 #' # Empirical Growth Rate (EGR) and EGR Model is needed to recalculated
 #' # with 0 testing days in order to retrieve the model used for future forecast
@@ -95,8 +91,16 @@
 #'
 #' return_plot = TRUE
 #'
-#' Penn_forecast = coffee_forecast(TS_data, emp_grow_model, population, total_cases, random_vectors,
-#'                                 pred_time_data, pred_by_factor, attack_rate_bounds, return_plot)
+#' Penn_forecast = coffee_forecast(TS_data,
+#'                                 emp_grow_model,
+#'                                 population,
+#'                                 total_cases,
+#'                                 random_vectors,
+#'                                 pred_time_data,
+#'                                 pred_by_factor,
+#'                                 attack_rate_bounds,
+#'                                 return_plot)
+#'
 coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, random_vectors,
                             pred_time_data, pred_by_factor = NULL,
                             attack_rate_bounds = c(.4,7), return_plot = FALSE){
@@ -108,7 +112,8 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
   # of outlier adjusted reported cases over the last 28 days.
   num_zero_reports = sum(TS_data$count_data == 0)
   num_forecast = length(pred_time_data)
-
+  pred_time_data = as.numeric(pred_time_data)
+  pred_time_data = pred_time_data - pred_time_data[1] + TS_data$time_data[nrow(TS_data)] + 1
 
   if(num_zero_reports > 14){
     if(num_zero_reports == 28){
@@ -265,17 +270,19 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     v_line_loc = .5*(as.numeric(reported_data$time_data[nrow(TS_data)]) + as.numeric(reported_data$time_data[nrow(TS_data) + 1]))
 
     # Plot the inner inner 80 percentile, 50 percentile and median
-    g15 <- ggplot2::ggplot(data = reported_data, ggplot2::aes(x = time_data, y = count_data))+
-      ggplot2::geom_point(ggplot2::aes(x = time_data, y = count_data), color = 'forestgreen', size = 1)+
-      ggplot2::geom_line(data = true_daily_red, ggplot2::aes(x = forecast_time_data, y = forecast_count_median), inherit.aes = F)+
-      ggplot2::geom_ribbon(data = true_daily_red, ggplot2::aes(x = forecast_time_data, ymin = forecast_count_.1, ymax = forecast_count_.9, fill = '80%'), inherit.aes = F, alpha = .3)+
-      ggplot2::geom_ribbon(data = true_daily_red, ggplot2::aes(x = forecast_time_data, ymin = forecast_count_.25, ymax = forecast_count_.75, fill = '50%'),inherit.aes = F, alpha = .3,)+
+    plot_return <- ggplot2::ggplot(data = reported_data, ggplot2::aes(x = reported_data$time_data, y = reported_data$count_data))+
+      ggplot2::geom_point(ggplot2::aes(x = reported_data$time_data, y = reported_data$count_data), color = 'forestgreen', size = 1)+
+      ggplot2::geom_line(data = true_daily_red, ggplot2::aes(x = true_daily_red$forecast_time_data, y = true_daily_red$forecast_count_median), inherit.aes = F)+
+      ggplot2::geom_ribbon(data = true_daily_red, ggplot2::aes(x = true_daily_red$forecast_time_data, ymin = true_daily_red$forecast_count_.1, ymax = true_daily_red$forecast_count_.9, fill = '80%'), inherit.aes = F, alpha = .3)+
+      ggplot2::geom_ribbon(data = true_daily_red, ggplot2::aes(x = true_daily_red$forecast_time_data, ymin = true_daily_red$forecast_count_.25, ymax = true_daily_red$forecast_count_.75, fill = '50%'),inherit.aes = F, alpha = .3,)+
       ggplot2::geom_vline(xintercept = v_line_loc, color = 'grey20', linetype = "dashed")+
       ggplot2::scale_color_manual("", values = c("red3",'pink3'))+
       ggplot2::scale_fill_manual("", values = c('red3','pink3'))+
-      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))+
+      ggplot2::xlab("Time")+
+      ggplot2::ylab("Count")
 
-    return_list$plot = g15
+    return_list$plot = plot_return
 
     }
 

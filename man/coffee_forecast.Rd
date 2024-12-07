@@ -86,13 +86,9 @@ eta_bounds = c(0,1)
 omega_bounds = c(1, 10)
 phi_bounds = c(.5,1.5)
 
-random_vectors = sample_inv_dist(n = 20,
-                                 TS_test_data = TS_test_data,
-                                 TS_train_data = TS_train_data,
-                                 eta_bounds = eta_bounds,
-                                 omega_bounds = omega_bounds,
-                                 phi_bounds = phi_bounds)
-
+# Get random vector data
+data("pennsylvania_random_vectors_example")
+random_vectors = pennsylvania_random_vectors_example
 
 # Empirical Growth Rate (EGR) and EGR Model is needed to recalculated
 # with 0 testing days in order to retrieve the model used for future forecast

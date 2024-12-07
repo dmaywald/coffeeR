@@ -78,6 +78,7 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
   within(qpois_mod, rm(data))
 
   adjusted_data = TS_data$count_data
+  adjusted_total = cumsum(adjusted_data)
 
   if(length(out3) > 0){
     for (num in out3) {
@@ -88,7 +89,7 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
   }
 
 
-  data.out = cbind(TS_data, adjusted_data)
+  data.out = cbind(TS_data, adjusted_data, adjusted_total)
   if(return_plot){
     # Plot data points, red points are outliers, green points are their replacement
     gg <- ggplot2::ggplot(TS_data, ggplot2::aes(x = time_data, y = count_data))+

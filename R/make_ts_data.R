@@ -18,9 +18,16 @@ make_ts_data <- function(count_data, time_data, by_factor = NULL){
     }
   }
 
+  # make total count data
+  total_count = cumsum(count_data)
 
   # Make TS_data for empirical growth rate model
-  TS_data <- data.frame(count_data, time_data)
+  TS_data <- data.frame(count_data, time_data, total_count)
+
+  TS_data$time_data = as.numeric(TS_data$time_data)
+
+  # Center time data to start at first entry.
+  TS_data$time_data = TS_data$time_data - TS_data$time_data[1]
 
   # add by_factor if it is not null
   if(!is.null(by_factor)){

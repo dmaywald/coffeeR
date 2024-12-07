@@ -54,3 +54,20 @@
 #' }
 #' @source <https://www2.census.gov/programs-surveys/popest/tables/2020-2023/state/totals/NST-EST2023-POP.xlsx>
 "state_population"
+
+
+
+#' Pennsylvania Random Vector Example
+#'
+#' A set of 100 random vectors drawn from the joint pdf defined by the inverse distance function.
+#' Uses empirical growth data generated from the first 550 days of Pennsylvania Covid-19 data.
+#'
+#' @format ## `pennsylvania_random_vectors_example`
+#' A data frame with 100 rows and 3 columns:
+#' \describe{
+#'   \item{eta}{100 random eta variables. Used in coffee_forecast.}
+#'   \item{omega}{100 random omega variables. Used in coffee_forecast.}
+#'   \item{phi}{100 random phi variables. USed in coffee_forecast.}
+#'   ...
+#' }
+"pennsylvania_random_vectors_example"

@@ -11,7 +11,7 @@ kappa_calc <- function(count_data){
   kappa_orig[is.nan(kappa_orig)] = Inf
 
   # append kappa_orig with a mean of the first few entries in order to have an empirical growth rate for the first day.
-  kappa_orig = c(mean(utils::head(kappa_orig)), kappa_orig)
+  kappa_orig = c(Inf, kappa_orig)
 
   # Adjust logit function for kappa's that are 0 or 1 (or close)
   tau_c = .95*min(kappa_orig[kappa_orig > 0])
