@@ -72,16 +72,17 @@
 #' data("new_mexico_random_vectors_example")
 #' random_vector = new_mexico_random_vectors_example
 #'
-#' new_mexico_future_forecast = coffee_method(count_data = count_data, time_data = time_data,
-#'                                            by_factor = by_factor, pred_time_data = pred_time_data,
-#'                                            pred_by_factor = pred_by_factor, population = population,
-#'                                            susc_perc = .55, adjust_data = TRUE, return_plot = TRUE)
+#' new_mexico_future_forecast = coffee(count_data = count_data, time_data = time_data,
+#'                                     by_factor = by_factor, pred_time_data = pred_time_data,
+#'                                     pred_by_factor = pred_by_factor, population = population,
+#'                                     susc_perc = .55, random_vector = random_vector,
+#'                                     adjust_data = TRUE, return_plot = TRUE)
 
-coffee_method <- function(count_data, time_data, by_factor = NULL, pred_time_data, pred_by_factor = NULL, population,
-                          adjust_data = TRUE, num_train = 28, num_test = 14, total_cases = NULL, susc_perc = .55,
-                          random_vectors = NULL, num_random_vectors = 50, eta_bounds = c(0, 1),
-                          omega_bounds = c(1, 14), phi_bounds = c(.9, 1.1), accept_const = NULL, max_draws = 1e4,
-                          attack_rate_bounds = c(.4, .7), cooks_constant = 4, return_plot = TRUE){
+coffee <- function(count_data, time_data, by_factor = NULL, pred_time_data, pred_by_factor = NULL, population,
+                   adjust_data = TRUE, num_train = 28, num_test = 14, total_cases = NULL, susc_perc = .55,
+                   random_vectors = NULL, num_random_vectors = 50, eta_bounds = c(0, 1),
+                   omega_bounds = c(1, 14), phi_bounds = c(.9, 1.1), accept_const = NULL, max_draws = 1e4,
+                   attack_rate_bounds = c(.4, .7), cooks_constant = 4, return_plot = TRUE){
   if (adjust_data) {
     # If adjust_data is TRUE, adjust the data
     adjusted_data = adjust_outliers(count_data = count_data, time_data = time_data, by_factor = by_factor)

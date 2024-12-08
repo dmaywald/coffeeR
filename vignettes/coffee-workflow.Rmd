@@ -1,0 +1,212 @@
+---
+title: "COFFEE Workflow"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{COFFEE Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(coffeeR)
+```
+
+
+The purpose of the COFFEE model is to provide future forecast for Epidemic Data. Though any count data collected over regular time intervals is possible, the model works best with daily reported cases of an ongoing virus spreading through a population.
+
+This package loosely follows the procedure outlined in the paper: 
+
+COFFEE: COVID-19 Forecasts using Fast Evaluations and Estimation 
+(https://arxiv.org/abs/2110.01546)
+
+This package was developed independently of the Los Alamos National Laboratory. 
+
+
+## COFFEE Workflow Overview
+
+The workflow of the COFFEE procedure implemented by this package follows these steps 
+
+1. Adjust Outliers
+2. Calculate Empirical Growth Rates
+3. Split Data into Training and Testing
+4. Sample random vectors of eta/omega/phi from the PDF defined by the inverse distance function
+5. Recalculate Empirical Growth Rates and create an Empirical Growth Rate model 
+6. Use random vectors and empirical growth rate model to generate future forecast
+
+Throughout this vignette, I will demonstrate this package using Covid-19 data. Specifically, I will use days 1-273 of New Mexico's daily Covid-19 cases collected by The Center for Systems Science and Engineering at John Hopkins University available at: 
+
+https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv
+
+
+I will also need state population data made available by the US Census Bureau available at:
+
+https://www2.census.gov/programs-surveys/popest/tables/2020-2023/state/totals/NST-EST2023-POP.xlsx
+
+These datasets have been made available in this package. 
+
+```{r, JH DATA}
+data("jh_data_daily_confirm")
+data("state_population")
+
+covid_cases = jh_data_daily_confirm$`New Mexico`[1:273]
+days = jh_data_daily_confirm$date[1:273]
+```
+
+
+## Step 1: Adjust Outliers
+
+This step is done through use of spline regression models. 3 models are used to identify potential outliers. Data points that are identified by 2 of 3 models are marked as outliers. These outliers are adjusted by weighted combinations of the fitted values from the 3 models. 
+
+I demonstrate these 3 spline models
+
+### Negative Binomial
+
+A function has been provided that fits a spline regression model with a negative binomial family.
+
+```{r, Negative Binomial Spline Regression, fig.width=5, fig.height=5, fig.align='center'}
+neg_bin <- fit_negative_binomial(count_data = covid_cases, time_data = days, return_plot = TRUE)
+
+neg_bin$plot
+```
+
+Outliers are marked in red on the plot. 
+
+
+However, categorical predictors can be added to this models as well. These are included within the 'by_factor' argument. 
+
+The categorical predictor I will use is the Day Of Week. During the pandemic, it was found that the Day of Week had a significant effect on the number of reported cases. 
+
+```{r, Negative Binomial DOW Spline Regression,  fig.width=9, fig.height=5,  fig.align='center'}
+day_of_week = jh_data_daily_confirm$day_of_week[1:273]
+neg_bin <- fit_negative_binomial(count_data = covid_cases,
+                                 time_data = days,
+                                 by_factor = day_of_week,
+                                 return_plot = TRUE)
+
+neg_bin$plot
+```
+
+The function `fit_negative_binomial()` also returns the model itself, a dataframe containing the supplied data and fitted values, the cook's distances associated with the model, and the indices of the identified outliers.
+
+```{r}
+neg_bin$outliers
+```
+
+
+
+
+### Poisson
+
+A spline regression can also be fit with a poisson family with the function `fit_poisson()`
+
+```{r, Poisson DOW Spline Regression,  fig.width=9, fig.height=5,  fig.align='center'}
+pois <- fit_poisson(count_data = covid_cases, time_data = days,
+                    by_factor = day_of_week, return_plot = TRUE)
+
+pois$plot
+```
+
+If you want to change the sensitivity to outliers, you can adjust the cook's constant argument within the function call. Lower values correspond to higher sensitivity. The defualt value for this function argument is 4. 
+
+```{r, High Sensitivity Poisson DOW Spline Regression,  fig.width=9, fig.height=5,  fig.align='center'}
+pois_high_sens <- fit_poisson(count_data = covid_cases, time_data = days,
+                    by_factor = day_of_week, cooks_constant = 1,
+                    return_plot = TRUE)
+
+pois_high_sens$plot
+```
+
+### Quasipoisson
+
+A spline regression can also be fit with a quasipoisson family. This can be done with the function `fit_qpois()`
+
+```{r, QuasiPoisson DOW Spline Regression,  fig.width=9, fig.height=5,  fig.align='center'}
+qpois_mod <- fit_qpois(count_data = covid_cases, time_data = days,
+                       by_factor = day_of_week, return_plot = TRUE)
+
+qpois_mod$plot
+```
+
+
+### Adjust Outliers Function
+
+The process of adjusting outliers can be done in one function `adjust_outliers()`.
+
+```{r, Adjust Outliers, fig.width=5, fig.height=5, fig.align='center'}
+adjusted_data <- adjust_outliers(count_data = covid_cases, time_data = days, 
+                                 by_factor = day_of_week, cooks_constant = 4, 
+                                 return_plot = TRUE)
+
+adjusted_data$plot
+```
+
+This function also provides a data frame containing the original data, as well as the adjusted data. 
+
+```{r}
+tail(adjusted_data$data)
+```
+
+This function also provides the 3 models fitted, as well as the identified outliers
+
+```{r}
+adjusted_data$outliers
+```
+
+## Step 2: Calculate Empirical Growth Rates
+
+Empirical Growth Rate (EGR) calculation is a vital step in this procedure. It is recommended to use outlier adjusted data for this step. This step is done by calling the function `empirical_growth_rates()`
+
+A few arguments are required in this function call:
+
+- Count Data: Observed count data (Reported)
+- Time Data: Regular time intervals in which data was collected (Days)
+- By Factor: Categorical Predictor (Day of Week)
+- Number of Training Observations: How much of the provided data will be used to fit an EGR model.
+- Number of Testing Observations: How much of the provided data will be used to calculate the inverse-distance function (more on this later). 
+- Population: The total population (Population of New Mexico)
+- Susceptible Percent: The proposed percent of the population that is susceptible to the virus. For covid-19, 55% (.55) was used. 
+
+```{r}
+# Get the population of New Mexico 
+new_mexico_pop <- state_population$New.Mexico[1]
+
+EGR <- empirical_growth_rates(count_data = adjusted_data$data$adjusted_data, 
+                              time_data = days, 
+                              by_factor = day_of_week,
+                              num_train = 28,
+                              num_test = 14,
+                              population = new_mexico_pop,
+                              susc_perc = .55)
+```
+
+This function returns a dataframe containing data that is necessary for calculating possible future values. More details on these values are given in the paper written by Castro, et. al. (https://doi.org/10.48550/arXiv.2110.01546). 
+
+```{r}
+tail(EGR$data)
+```
+
+The EGR model is also given. However, it is not strictly necessary to use at this time.
+```{r}
+EGR$emp_grow_mod
+```
+
+
+## Step 3: Split Data into Training and Testing
+
+
+
+## Step 4: Sample Random Vectors
+
+
+## Step 5: Recalculate Empirical Growth Rates. Create Empirical Growth Rate Model
+
+
+## Step 6: Generate Future Forecast
+
