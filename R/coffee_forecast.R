@@ -276,7 +276,9 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     true_daily_mid = rep(NA, num_forecast)
     true_daily_mid = sapply(1:num_forecast, \(idx){true_daily_mid[idx] = stats::quantile(true_daily_for[idx,],.5)})
 
-    true_daily_red = data.frame(forecast_time_data = pred_time_data,
+    # adding 1 to pred_time data since TS_data was centered to start at day 0 instead of day 1.
+    # Results are equivalent
+    true_daily_red = data.frame(forecast_time_data = pred_time_data + 1,
                                 forecast_count_median = true_daily_mid,
                                 forecast_count_.1 = true_daily_low_low,
                                 forecast_count_.25 = true_daily_low,
@@ -288,9 +290,10 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     for (i in 1:num_random_vector) {
       new_row_names[i] = paste("series_", as.character(i), sep = "")
     }
-
-    data.out = rbind(pred_time_data, t(true_daily_for))
-    rownames(data.out) <- c(rownames(data.out)[1], new_row_names)
+    # adding 1 to pred_time data since TS_data was centered to start at day 0 instead of day 1.
+    # Results are equivalent
+    data.out = rbind(as.numeric(pred_time_data) + 1, t(true_daily_for))
+    rownames(data.out) <- c("pred_time_data", new_row_names)
 
     return_list <- list(full_forecast_data = data.out, simplified_data = true_daily_red)
     if(return_plot){
@@ -307,18 +310,6 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
 
     reported_data$by_factor[-(1:nrow(TS_data))] = pred_by_factor
 
-    # Plot all the 'num_random_vector' many forecasts together
-    reported_data$Type = c(rep("Past Data", nrow(TS_data)), rep("Future Data", num_forecast))
-
-    data.new = cbind.data.frame(time_data = reported_data$time_data[reported_data$Type == "Future Data"], true_daily_for)
-    data.new$Type = NULL
-    data.new = reshape2::melt(data.new, id = 'time_data')
-    data.new$eta = rep(random_vectors$eta, each = num_forecast)
-    data.new$omega = rep(random_vectors$omega, each = num_forecast)
-    data.new$phi = rep(random_vectors$phi, each = num_forecast)
-    if(!is.null(random_vectors$prob)){
-      data.new$prob = log(log(rep(random_vectors$prob,each = num_forecast))) # log log is taken for the sake of visualization
-    }
 
     v_line_loc = .5*(as.numeric(reported_data$time_data[nrow(TS_data)]) + as.numeric(reported_data$time_data[nrow(TS_data) + 1]))
 

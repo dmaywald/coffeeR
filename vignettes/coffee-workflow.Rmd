@@ -59,6 +59,15 @@ covid_cases = jh_data_daily_confirm$`New Mexico`[1:273]
 days = jh_data_daily_confirm$date[1:273]
 ```
 
+```{r}
+tail(days)
+```
+```{r}
+tail(covid_cases)
+```
+
+
+
 
 ## Step 1: Adjust Outliers
 
@@ -165,13 +174,13 @@ Empirical Growth Rate (EGR) calculation is a vital step in this procedure. It is
 
 A few arguments are required in this function call:
 
-- Count Data: Observed count data (Reported)
-- Time Data: Regular time intervals in which data was collected (Days)
-- By Factor: Categorical Predictor (Day of Week)
-- Number of Training Observations: How much of the provided data will be used to fit an EGR model.
-- Number of Testing Observations: How much of the provided data will be used to calculate the inverse-distance function (more on this later). 
-- Population: The total population (Population of New Mexico)
-- Susceptible Percent: The proposed percent of the population that is susceptible to the virus. For covid-19, 55% (.55) was used. 
+ - Count Data: Observed count data (Reported)
+ - Time Data: Regular time intervals in which data was collected (Days)
+ - By Factor: Categorical Predictor (Day of Week)
+ - Number of Training Observations: How much of the provided data will be used to fit an EGR model.
+ - Number of Testing Observations: How much of the provided data will be used to calculate the inverse-distance function (more on this later). 
+ - Population: The total population (Population of New Mexico)
+ - Susceptible Percent: The proposed percent of the population that is susceptible to the virus. For covid-19, 55% (.55) was used. 
 
 ```{r}
 # Get the population of New Mexico 
@@ -200,13 +209,247 @@ EGR$emp_grow_mod
 
 ## Step 3: Split Data into Training and Testing
 
+The goal of step 3 and step 4 are to generate random samples of $(\eta, \omega, \phi)$. We generate these samples through a joint pdf that's defined by the 'test error' of model constructed over training data. 
+
+To help explain the procedure, consider the following (oversimplified) situation:
+
+You have 42 days of days, and you want to make X days of predictions. You have a function of 3 variables, say $f(\eta, \omega, \phi)$, that can construct X days of predictions, but different values of $\eta, \omega, $ and $\phi$ can give you wildly different results. Some values of $\eta, \omega, $ and $\phi$ can cause your predictions to "blow up" over X days and some values can cause your predictions to drop to 0 over X days. How do you pick the right values of $\eta, \omega, $ and $\phi$? 
+
+Instead, pretend that we only have the first 28 days of data available. Now see which values of $\eta, \omega, $ and $\phi$ allow $f(\eta, \omega, \phi)$ to kinda "agree" on the remaining 14 days of data we had ignored. We say that these values of $\eta, \omega, $ and $\phi$ are "best" for predicting the X days that we desire. 
+
+Before going forward, we need to do this split of training and testing data. I made a small function to help with this. 
+
+```{r}
+split = coffee_train_test_split(TS_data = EGR$data, num_train = 28, num_test = 14)
+
+TS_test_data = split$TS_test_data
+TS_train_data = split$TS_train_data
+```
 
 
 ## Step 4: Sample Random Vectors
 
+This is the most time consuming step. I implement the accept-reject method to sample random vectors $(\eta, \omega, \phi)$. An "accept constant" is needed for this method. It is It is recommended to use the function `calc_accept_const()` to calculate this constant, then sample the inverse-distance function with `sample_inv_dist()` with parallel processing. 
+
+The bounds of these random variables $\eta, \omega, $ and $\phi$ should typically be: 
+ - $\eta$: $(0,1)$
+ - $\omega$: $(1, X)$, where $X$ is days of predictions we want to make
+ - $\phi$: $(1 - \alpha, 1 + \alpha)$, where $0 < \alpha < 1$
+ 
+
+**This code WOULD be ran, but due to the limitations of a vignette it has been commented out. Identical code is instead ran to generate "new_mexico_random_vectors_example" comes attached with this package.**
+```{r Sample Inverse Distance}
+# eta_bounds = c(0,1)
+# omega_bounds = c(1, 14)
+# phi_bounds = c(.9, 1.1)
+# num_random_vector = 250
+# num_train = 28
+# num_test = 14
+# 
+# kappa_const_dow = TS_test_data$kappa_const + TS_test_data$kappa_dow
+# eta_coeff = stats::median(TS_train_data$kappa_star[(num_train - 6):num_train])
+# 
+# accept_const = calc_accept_const(eta_bounds = eta_bounds, omega_bounds = omega_bounds,
+#                                  phi_bounds = phi_bounds, N = 50000,
+#                                  TS_data = TS_test_data, kappa_const_dow = kappa_const_dow,
+#                                  eta_coeff = eta_coeff, num_test = 14)
+# 
+# library(doParallel)
+# 
+# unregister_dopar <- function() {
+#     env <- foreach:::.foreachGlobals
+#     rm(list=ls(name=env), pos=env)
+# }
+# 
+# 
+# nworkers <- detectCores() - 1
+# cl <- makeCluster(nworkers)
+# registerDoParallel(cl)
+# random_vectors = foreach(idx = 1:num_random_vector, .combine = rbind, .packages = 'coffeeR') %dopar% {
+#       sample_inv_dist(1, TS_test_data = TS_test_data, TS_train_data = TS_train_data,
+#                   eta_bounds = eta_bounds, omega_bounds = omega_bounds,
+#                   phi_bounds = phi_bounds, accept_const = accept_const, max_draws = 1e7)
+# }
+# stopCluster(cl)
+# unregister_dopar()
+```
+
+```{r}
+data("new_mexico_random_vectors_example")
+random_vectors = new_mexico_random_vectors_example
+summary(random_vectors)
+```
 
 ## Step 5: Recalculate Empirical Growth Rates. Create Empirical Growth Rate Model
 
+Now that we have random vectors $(\eta, \omega, \phi)$, we should recalculate the Empirical Growth Rate model and associated data on the most recent 28 days of data available. This is a repeat of step 2 but with num_test = 0. 
+
+```{r}
+emp_grow_rate = empirical_growth_rates(count_data = adjusted_data$data$adjusted_data,
+                                       time_data = days,
+                                       num_train = 28,
+                                       num_test = 0,
+                                       population = new_mexico_pop,
+                                       susc_perc = .55,
+                                       by_factor = day_of_week)
+```
+
 
 ## Step 6: Generate Future Forecast
+
+With random vectors and an EGR model, we now have what we need to make future predictions. We essentially follow an SIR model with a forward time stepping scheme. This is done with function `coffee_forecast()`
+
+There are a handful of function arguments:
+ - TS_data: A dataframe containing empirical growth rate data. This is gathered from the `empirical_growth_rate()` function call in step 5
+ - emp_grow_model: An empirical growth rate model used to predict future empirical growth rates. This is also gathered from the `empirical_growth_rate()` function call in step 5
+ - total_cases: Total number of cases currently observed in the population. This should be the sum of the adjusted count data.
+ - random_vectors: Random vectors calculated in step 4.
+ - pred_time_data: The time data corresponding to the future forecast. In this example, these are the future dates/days
+ - pred_by_factor: The by_factor data corresponding to future forecast. In this example, these are the future days of the week 
+ - attack_rate_bounds: We need to account for the unknown attack rate of Covid-19. We claim that it's between .4 and .7
+ - return_plot: Boolean. Return visualization?
+
+```{r Future Forecast, warning=FALSE, fig.width=7, fig.height=5,  fig.align='center'}
+total_cases = sum(adjusted_data$data$adjusted_data)
+num_forecast = 14
+attack_rate_bounds = c(.4, .7)
+
+# Get time data corresponding to forecast values
+first_pred_date = days[length(days)] + 1
+last_pred_date = days[length(days)] + num_forecast
+
+pred_time_data = seq.Date(first_pred_date, last_pred_date, by = 'day')
+
+# Get the Day of week for each corresponding day
+pred_by_factor = format(pred_time_data, '%a')
+
+future_forecast = coffee_forecast(TS_data = emp_grow_rate$data,
+                                  emp_grow_model = emp_grow_rate$emp_grow_mod,
+                                  population = new_mexico_pop,
+                                  total_cases = total_cases,
+                                  random_vectors = random_vectors,
+                                  pred_time_data = pred_time_data,
+                                  pred_by_factor = pred_by_factor,
+                                  attack_rate_bounds = attack_rate_bounds,
+                                  return_plot = TRUE)
+
+future_forecast$plot
+```
+
+The visualization above is a simplification of the data generated by COFFEE procedure. In reality, since we took 250 samples of $\eta, \omega$ and $\phi$, we have generated 250 potential future forecasts. 
+
+Here are some of the calculated forecast for the first week of predictions
+```{r}
+tail(future_forecast$full_forecast_data[, 1:7])
+```
+
+Overall, the predictions look like this:
+
+```{r Messy Plot,fig.width=7, fig.height=5,  fig.align='center' }
+
+library(reshape2)
+
+num_train_days = 28
+num_test_days = 14
+num_forecast_days = 14
+first_day = 273-42
+last_day = 273
+num_random_vector = 250
+
+data_days = first_day:(last_day+num_forecast_days)
+
+col_num  = which(names(jh_data_daily_confirm) == 'New Mexico')
+rep_data = data.frame(day = jh_data_daily_confirm$date[data_days],
+                      cases_orig = jh_data_daily_confirm[data_days,col_num],
+                      day_of_week = jh_data_total_confirm$day_of_week[data_days],
+                      month = jh_data_total_confirm$month[data_days],
+                      year = jh_data_total_confirm$year[data_days],
+                      date = as.Date(jh_data_total_confirm$date[data_days],
+                                          origin = jh_data_daily_confirm$date[first_day]))
+  # Plot all the 'num_random_vector' many forecasts together
+  rep_data$`JH Data` = c(rep("Past Data", num_train_days+num_test_days+1),
+                         rep("Future Data", num_forecast_days))
+  
+  data.new = cbind.data.frame(day = rep_data$day[rep_data$`JH Data` == "Future Data"],
+                              t(future_forecast$full_forecast_data[-1,]))
+  data.new = reshape2::melt(data.new, id = 'day')
+  data.new$eta = rep(random_vectors$eta,each = num_forecast_days)
+  data.new$omega = rep(random_vectors$omega,each = num_forecast_days)
+  data.new$phi = rep(random_vectors$phi,each = num_forecast_days)
+  
+  v_line_loc = rep_data$day[num_train_days + num_test_days + 1]
+  
+  g14 <- ggplot2::ggplot(data = rep_data, ggplot2::aes(x = day, y = cases_orig, shape = `JH Data`))+
+    ggplot2::geom_point(ggplot2::aes(x = day, y = cases_orig, shape = `JH Data`),
+                        color = 'forestgreen', size = 1)+
+    ggplot2::geom_line(data = data.new, ggplot2::aes(x = day, y = value, color = variable),
+                       alpha = .5, inherit.aes = F)+
+    ggplot2::geom_vline(xintercept = v_line_loc + .5, color = 'grey20', linetype = "dashed")+
+    ggplot2::scale_shape_manual(values = c(17, 16))+
+    ggplot2::scale_color_manual(values = rep('grey70', num_random_vector))+
+    ggplot2::guides(color = "none")+
+    ggplot2::ggtitle("New Mexico: Forecasted Daily Cases")+
+    ggplot2::ylab("True Daily Cases")+
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 30, hjust = 1))
+  plot(g14)
+  
+```
+
+I've also imposed the future data that would be collected AFTER making these forecast (the green triangles were unknown to us at the time of implementing the COFFEE procedure). We can see that this procedure is both effective and quick to implement. 
+
+
+
+## Wrapper Function
+
+Steps 1-6 are all done by one function `coffee()`. All of the same function arguments still apply. However, this time I will be using days 1-550 of the Pennsylvania Covid-19 Cases
+
+```{r Pennsylvania, warning=FALSE}
+data("jh_data_daily_confirm")
+data("state_population")
+
+# Observed data
+covid_cases = jh_data_daily_confirm$Pennsylvania[1:550]
+days = jh_data_daily_confirm$date[1:550]
+day_of_week = jh_data_daily_confirm$day_of_week[1:550]
+
+num_forecast = 14
+
+# Random vectors computed in parallel (comes attached with package)
+# See step 4 to see how to do this
+data("pennsylvania_random_vectors_example")
+random_vectors = pennsylvania_random_vectors_example
+
+# Get time data corresponding to forecast values
+first_pred_date = days[length(days)] + 1
+last_pred_date = days[length(days)] + num_forecast
+pred_time_data = seq.Date(first_pred_date, last_pred_date, by = 'day')
+
+# Get the Day of week for each corresponding day
+pred_by_factor = format(pred_time_data, '%a')
+
+penn_pop = state_population$Pennsylvania[1]
+
+penn_forecast = coffee(
+  count_data = covid_cases,
+  time_data = days,
+  by_factor = day_of_week,
+  pred_time_data = pred_time_data,
+  pred_by_factor = pred_by_factor,
+  population = penn_pop,
+  adjust_data = TRUE,
+  num_train = 28,
+  num_test = 14,
+  susc_perc = .55,
+  random_vectors = random_vectors,
+  attack_rate_bounds = c(.4, .7),
+  return_plot = TRUE
+)
+
+
+penn_forecast$plot
+```
+
+
+
+
 

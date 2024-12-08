@@ -5,7 +5,14 @@ Authors@R:
     person("Devon", "Maywald",
            email = "dmaywald@tamu.edu",
            role = c('aut', 'cre'))
-Description: What the package does (one paragraph).
+Description: The COFFEE (Covid-19 Forecasts using Fast Evaluations and Estimations) model
+    developed by the Los Alamos National Laboratory (Castro, 2020) incorporates statistical 
+    methods to dynamically parameterize a SIR model over time and across populations. Although 
+    originally designed for COVID-19, the COFFEE method is adaptable to any pandemic data. 
+    This package implements functions that will generate 14-day forecasts of
+    daily cases when given training data for any viral disease. A vignette
+    is available to demonstrate the functionality of my package using
+    COVID-19 data.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

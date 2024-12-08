@@ -33,7 +33,7 @@ calc_accept_const(
 \item{num_test}{Number of testing values.}
 }
 \value{
-Estimated maximal value of inverse distance function to be used in sample_inv_dist.
+Estimated accept constant used Accept-Reject method within sample_inv_dist.
 }
 \description{
 Calculate Acceptance Constant used in sample_inv_dist

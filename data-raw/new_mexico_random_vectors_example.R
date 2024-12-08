@@ -27,6 +27,7 @@ count_data = TS_data$data$adjusted_data
 num_train = 28
 num_test = 14
 num_forecast = 14
+num_random_vector = 250
 
 # Get Florida Population and use .55 as susceptible population proportion
 population = state_population$New.Mexico[1]
@@ -54,12 +55,30 @@ kappa_const_dow = TS_test_data$kappa_const + TS_test_data$kappa_dow
 
 eta_coeff = stats::median(TS_train_data$kappa_star[(num_train - 6):num_train])
 
-# accept_const = calc_accept_const(eta_bounds = eta_bounds, omega_bounds = omega_bounds, phi_bounds = phi_bounds,
-#                                 N = 50000, TS_data = TS_test_data, kappa_const_dow = kappa_const_dow,
-#                                 eta_coeff = eta_coeff, num_test = num_test)
+accept_const = calc_accept_const(eta_bounds = eta_bounds, omega_bounds = omega_bounds,
+                                 phi_bounds = phi_bounds, N = 50000,
+                                 TS_data = TS_test_data, kappa_const_dow = kappa_const_dow,
+                                 eta_coeff = eta_coeff, num_test = 14)
 
-new_mexico_random_vectors_example = sample_inv_dist(n = 100, TS_test_data = TS_test_data, TS_train_data = TS_train_data,
-                                                    eta_bounds = eta_bounds, omega_bounds = omega_bounds, phi_bounds = phi_bounds,
-                                                    max_draws = 1e7)
+library(doParallel)
+
+unregister_dopar <- function() {
+  env <- foreach:::.foreachGlobals
+  rm(list=ls(name=env), pos=env)
+}
+
+
+nworkers <- detectCores() - 1
+cl <- makeCluster(nworkers)
+registerDoParallel(cl)
+random_vectors = foreach(idx = 1:num_random_vector, .combine = rbind, .packages = 'coffeeR') %dopar% {
+  sample_inv_dist(1, TS_test_data = TS_test_data, TS_train_data = TS_train_data,
+                  eta_bounds = eta_bounds, omega_bounds = omega_bounds,
+                  phi_bounds = phi_bounds, accept_const = accept_const, max_draws = 1e7)
+}
+stopCluster(cl)
+unregister_dopar()
+
+new_mexico_random_vectors_example = random_vectors
 
 usethis::use_data(new_mexico_random_vectors_example, overwrite = TRUE)
