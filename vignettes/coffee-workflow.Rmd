@@ -21,10 +21,7 @@ library(coffeeR)
 
 The purpose of the COFFEE model is to provide future forecast for Epidemic Data. Though any count data collected over regular time intervals is possible, the model works best with daily reported cases of an ongoing virus spreading through a population.
 
-This package loosely follows the procedure outlined in the paper: 
-
-COFFEE: COVID-19 Forecasts using Fast Evaluations and Estimation 
-(https://arxiv.org/abs/2110.01546)
+This package loosely follows the procedure outlined in the paper COFFEE: COVID-19 Forecasts using Fast Evaluations and Estimation[^1] 
 
 This package was developed independently of the Los Alamos National Laboratory. 
 
@@ -40,18 +37,16 @@ The workflow of the COFFEE procedure implemented by this package follows these s
 5. Recalculate Empirical Growth Rates and create an Empirical Growth Rate model 
 6. Use random vectors and empirical growth rate model to generate future forecast
 
-Throughout this vignette, I will demonstrate this package using Covid-19 data. Specifically, I will use days 1-273 of New Mexico's daily Covid-19 cases collected by The Center for Systems Science and Engineering at John Hopkins University available at: 
+## Read in Data
 
-https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv
+Throughout this vignette, I will demonstrate this package using Covid-19 data. Specifically, I will use days 1-273 of New Mexico's daily Covid-19 cases collected by The Center for Systems Science and Engineering at John Hopkins University.[^2]
 
-
-I will also need state population data made available by the US Census Bureau available at:
-
-https://www2.census.gov/programs-surveys/popest/tables/2020-2023/state/totals/NST-EST2023-POP.xlsx
+I will also need state population data made available by the US Census Bureau available on their website.[^3]
 
 These datasets have been made available in this package. 
 
 ```{r, JH DATA}
+# Read in John Hopkins data and State population data
 data("jh_data_daily_confirm")
 data("state_population")
 
@@ -86,7 +81,6 @@ neg_bin$plot
 ```
 
 Outliers are marked in red on the plot. 
-
 
 However, categorical predictors can be added to this models as well. These are included within the 'by_factor' argument. 
 
@@ -195,7 +189,7 @@ EGR <- empirical_growth_rates(count_data = adjusted_data$data$adjusted_data,
                               susc_perc = .55)
 ```
 
-This function returns a dataframe containing data that is necessary for calculating possible future values. More details on these values are given in the paper written by Castro, et. al. (https://doi.org/10.48550/arXiv.2110.01546). 
+This function returns a dataframe containing data that is necessary for calculating possible future values. More details on these values are given in the paper written by Castro, et. al [^1]. 
 
 ```{r}
 tail(EGR$data)
@@ -213,9 +207,9 @@ The goal of step 3 and step 4 are to generate random samples of $(\eta, \omega, 
 
 To help explain the procedure, consider the following (oversimplified) situation:
 
-You have 42 days of days, and you want to make X days of predictions. You have a function of 3 variables, say $f(\eta, \omega, \phi)$, that can construct X days of predictions, but different values of $\eta, \omega, $ and $\phi$ can give you wildly different results. Some values of $\eta, \omega, $ and $\phi$ can cause your predictions to "blow up" over X days and some values can cause your predictions to drop to 0 over X days. How do you pick the right values of $\eta, \omega, $ and $\phi$? 
+You have 42 days of days, and you want to make X days of predictions. You have a function of 3 variables, say $f(\eta, \omega, \phi)$, that can construct X days of predictions, but different values of $\eta$, $\omega$ and $\phi$ can give you wildly different results. Some values of $\eta$, $\omega$ and $\phi$ can cause your predictions to "blow up" over X days and some values can cause your predictions to drop to 0 over X days. How do you pick the right values of $\eta$, $\omega$ and $\phi$? 
 
-Instead, pretend that we only have the first 28 days of data available. Now see which values of $\eta, \omega, $ and $\phi$ allow $f(\eta, \omega, \phi)$ to kinda "agree" on the remaining 14 days of data we had ignored. We say that these values of $\eta, \omega, $ and $\phi$ are "best" for predicting the X days that we desire. 
+Instead, pretend that we only have the first 28 days of data available. Now see which values of $eta$, $\omega$ and $\phi$ allow $f(\eta, \omega, \phi)$ to kinda "agree" on the remaining 14 days of data we had ignored. We say that these values of $\eta$, $\omega$, and $\phi$ are "best" for predicting the X days that we desire. 
 
 Before going forward, we need to do this split of training and testing data. I made a small function to help with this. 
 
@@ -231,7 +225,8 @@ TS_train_data = split$TS_train_data
 
 This is the most time consuming step. I implement the accept-reject method to sample random vectors $(\eta, \omega, \phi)$. An "accept constant" is needed for this method. It is It is recommended to use the function `calc_accept_const()` to calculate this constant, then sample the inverse-distance function with `sample_inv_dist()` with parallel processing. 
 
-The bounds of these random variables $\eta, \omega, $ and $\phi$ should typically be: 
+The bounds of these random variables $\eta$, $\omega$ and $\phi$ should typically be: 
+
  - $\eta$: $(0,1)$
  - $\omega$: $(1, X)$, where $X$ is days of predictions we want to make
  - $\phi$: $(1 - \alpha, 1 + \alpha)$, where $0 < \alpha < 1$
@@ -300,6 +295,7 @@ emp_grow_rate = empirical_growth_rates(count_data = adjusted_data$data$adjusted_
 With random vectors and an EGR model, we now have what we need to make future predictions. We essentially follow an SIR model with a forward time stepping scheme. This is done with function `coffee_forecast()`
 
 There are a handful of function arguments:
+
  - TS_data: A dataframe containing empirical growth rate data. This is gathered from the `empirical_growth_rate()` function call in step 5
  - emp_grow_model: An empirical growth rate model used to predict future empirical growth rates. This is also gathered from the `empirical_growth_rate()` function call in step 5
  - total_cases: Total number of cases currently observed in the population. This should be the sum of the adjusted count data.
@@ -336,7 +332,7 @@ future_forecast = coffee_forecast(TS_data = emp_grow_rate$data,
 future_forecast$plot
 ```
 
-The visualization above is a simplification of the data generated by COFFEE procedure. In reality, since we took 250 samples of $\eta, \omega$ and $\phi$, we have generated 250 potential future forecasts. 
+The visualization above is a simplification of the data generated by COFFEE procedure. In reality, since we took 250 samples of $\eta$, $\omega$ and $\phi$, we have generated 250 potential future forecasts. 
 
 Here are some of the calculated forecast for the first week of predictions
 ```{r}
@@ -404,6 +400,7 @@ I've also imposed the future data that would be collected AFTER making these for
 Steps 1-6 are all done by one function `coffee()`. All of the same function arguments still apply. However, this time I will be using days 1-550 of the Pennsylvania Covid-19 Cases
 
 ```{r Pennsylvania, warning=FALSE, fig.width=7, fig.height=5,}
+# Read in data
 data("jh_data_daily_confirm")
 data("state_population")
 
@@ -412,6 +409,7 @@ covid_cases = jh_data_daily_confirm$Pennsylvania[1:550]
 days = jh_data_daily_confirm$date[1:550]
 day_of_week = jh_data_daily_confirm$day_of_week[1:550]
 
+# Number of forecast days
 num_forecast = 14
 
 # Random vectors computed in parallel (comes attached with package)
@@ -427,8 +425,10 @@ pred_time_data = seq.Date(first_pred_date, last_pred_date, by = 'day')
 # Get the Day of week for each corresponding day
 pred_by_factor = format(pred_time_data, '%a')
 
+# Population of Pennsylvania 
 penn_pop = state_population$Pennsylvania[1]
 
+# Produce forecasts
 penn_forecast = coffee(
   count_data = covid_cases,
   time_data = days,
@@ -450,6 +450,10 @@ penn_forecast$plot
 ```
 
 
+## References
 
+[^1]: COFFEE: COVID-19 Forecasts using Fast Evaluations and Estimation [(Castro, 2020)](https://doi.org/10.48550/arXiv.2110.01546)
 
+[^2]: John Hopkins Data available on [github](https://github.com/CSSEGISandData/COVID-19/blob/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv)
 
+[^3]: US Census Bureau State Population [Data](https://www2.census.gov/programs-surveys/popest/tables/2020-2023/state/totals/NST-EST2023-POP.xlsx)
