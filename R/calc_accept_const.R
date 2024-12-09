@@ -60,8 +60,9 @@
 #'
 #' eta_coeff = stats::median(TS_train_data$kappa_star[(num_train - 6):num_train])
 #'
+#' # Make N a bit smaller to reduce calculation time for the sake of the example.
 #' accept_const = calc_accept_const(eta_bounds = eta_bounds, omega_bounds = omega_bounds,
-#'                                  phi_bounds = phi_bounds, N = 50000,
+#'                                  phi_bounds = phi_bounds, N = 500,
 #'                                  TS_data = TS_test_data,
 #'                                  kappa_const_dow = kappa_const_dow,
 #'                                  eta_coeff = eta_coeff, num_test = num_test)
@@ -71,6 +72,25 @@ calc_accept_const <- function(eta_bounds, omega_bounds, phi_bounds, N = 50000, T
   if (nrow(TS_data) != num_test){
     warning("nrow(TS_data) not same as num_test. This can cause unexpected results")
   }
+
+  # make sure eta/omega/phi_bounds make sense
+
+  if(eta_bounds[1] >= eta_bounds[2] | length(eta_bounds) > 2){
+    stop("eta_bounds needs to be a vector of length 2 with first argument strictly less than the second argument.")
+  }
+
+  if(omega_bounds[1] >= omega_bounds[2] | length(omega_bounds) > 2){
+    stop("omega_bounds needs to be a vector of length 2 with first argument strictly less than the second argument.")
+  }
+
+  if(phi_bounds[1] >= phi_bounds[2] | length(phi_bounds) > 2){
+    stop("phi_bounds needs to be a vector of length 2 with first argument strictly less than the second argument.")
+  }
+
+  if(is.null(TS_data$kappa_const)){
+    stop("TS_data does not have appropriate structure. Should be dataframe returned by empirical_growth_rates() function.")
+  }
+
 
   temp = data.frame(eta = stats::runif(N, eta_bounds[1], eta_bounds[2]),
                     omega = stats::runif(N, omega_bounds[1], omega_bounds[2]),

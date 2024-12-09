@@ -83,6 +83,22 @@ coffee <- function(count_data, time_data, by_factor = NULL, pred_time_data, pred
                    random_vectors = NULL, num_random_vectors = 50, eta_bounds = c(0, 1),
                    omega_bounds = c(1, 14), phi_bounds = c(.9, 1.1), accept_const = NULL, max_draws = 1e4,
                    attack_rate_bounds = c(.4, .7), cooks_constant = 4, return_plot = TRUE){
+  ## User checks ##
+  if (!(cooks_constant > 0)) {
+    stop("Bad value for cooks constant argument. Needs to be greater than 0")
+  }
+
+  if (!(num_train) > 0) {
+    stop("Bad value for num_train. Needs to be greater than 0")
+  }
+
+  if (!(num_test) > 0) {
+    stop("Bad value for num_train")
+  }
+
+
+
+
   if (adjust_data) {
     # If adjust_data is TRUE, adjust the data
     adjusted_data = adjust_outliers(count_data = count_data, time_data = time_data, by_factor = by_factor)

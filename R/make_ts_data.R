@@ -7,7 +7,7 @@ make_ts_data <- function(count_data, time_data, by_factor = NULL){
   }
 
   # check count data is non-negative
-  if(min(count_data) < 0){
+  if(any(count_data < 0)){
     stop("count_data cannot have negative values")
   }
 

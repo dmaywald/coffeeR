@@ -75,9 +75,30 @@ sample_inv_dist <- function(n, TS_test_data, TS_train_data, eta_bounds, omega_bo
     stop("phi_bounds needs to be a vector of length 2 with first argument strictly less than the second argument.")
   }
 
-  kappa_const_dow = TS_test_data$kappa_const + TS_test_data$kappa_dow
+  if(is.null(TS_test_data$kappa_const) | is.null(TS_train_data$kappa_const)){
+    stop("TS_test_data or TS_train data does not have appropriate structure. Should be dataframe returned by empirical_growth_rates() function.")
+  }
 
-  eta_coeff = stats::median(TS_train_data$kappa_star[(num_train - 6):num_train])
+  # Calculate kappa_const_dow (or just kappa_const if no by_factor variable was used. )
+  if (is.null(TS_test_data$kappa_dow)){
+    kappa_const_dow = TS_test_data$kappa_const + TS_test_data$kappa_dow
+  } else {
+    kappa_const_dow = TS_test_data$kappa_const
+  }
+
+
+  if (nrow(TS_train_data) > 7){
+    eta_coeff = stats::median(TS_train_data$kappa_star[(num_train - 6):num_train])
+  } else {
+    eta_coeff = stats::median(utils::tail(TS_train_data$kappa_star))
+  }
+
+
+  if (!is.null(accept_const)) {
+    if(!(accept_const > 0)){
+      stop("Accept Constant needs to be greater than 0.")
+    }
+  }
 
   # if no accept constant is given, calculate one
   if(is.null(accept_const)){

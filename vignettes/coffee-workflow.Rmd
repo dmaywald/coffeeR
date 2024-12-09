@@ -403,7 +403,7 @@ I've also imposed the future data that would be collected AFTER making these for
 
 Steps 1-6 are all done by one function `coffee()`. All of the same function arguments still apply. However, this time I will be using days 1-550 of the Pennsylvania Covid-19 Cases
 
-```{r Pennsylvania, warning=FALSE}
+```{r Pennsylvania, warning=FALSE, fig.width=7, fig.height=5,}
 data("jh_data_daily_confirm")
 data("state_population")
 

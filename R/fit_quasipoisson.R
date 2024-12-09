@@ -37,6 +37,10 @@ fit_qpois <- function(count_data, time_data, by_factor = NULL, cooks_constant = 
   # Construct time series data
   TS_data = make_ts_data(count_data, time_data, by_factor)
 
+  if (!(cooks_constant > 0)) {
+    stop("Bad value for cooks constant argument. Needs to be greater than 0")
+  }
+
   if(!is.null(by_factor)){
     # Model count data with  Quasipoisson (qpois) model with "by_factor"
     qpois_mod <- tryCatch(stats::glm(count_data ~ splines::ns(as.numeric(time_data),df = 10):by_factor,

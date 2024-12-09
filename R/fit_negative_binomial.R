@@ -39,6 +39,11 @@ fit_negative_binomial <- function(count_data, time_data, by_factor = NULL, cooks
   # Construct time series data
   TS_data = make_ts_data(count_data, time_data, by_factor)
 
+  if (!(cooks_constant > 0)) {
+    stop("Bad value for cooks constant argument. Needs to be greater than 0")
+  }
+
+
   # Model count data with negative binomial model with "by_factor"
   if(!is.null(by_factor)){
     nb_mod <- mgcv::gam(count_data ~

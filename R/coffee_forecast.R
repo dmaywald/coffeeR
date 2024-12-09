@@ -182,6 +182,10 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
       confirmed_mean_train = mean(utils::tail(TS_data$count_data))
     }
 
+    if(is.null(TS_data$kappa_const) | is.null(TS_data$kappa_const)){
+      stop("TS_test_data or TS_train data does not have appropriate structure. Should be dataframe returned by empirical_growth_rates() function.")
+    }
+
     k_const = rep(dplyr::last(TS_data$kappa_const), num_forecast)
 
     k_dow           = stats::predict(emp_grow_model, pred_data %>% dplyr::mutate(Intercept = 0, time_data = 0))
@@ -298,9 +302,17 @@ coffee_forecast <- function(TS_data, emp_grow_model, population, total_cases, ra
     return_list <- list(full_forecast_data = data.out, simplified_data = true_daily_red)
     if(return_plot){
 
-    reported_data = data.frame(time_data = TS_data$time_data,
-                               count_data = TS_data$count_data,
-                               by_factor = TS_data$by_factor)
+      if(!is.null(TS_data$by_factor)){
+        reported_data = data.frame(time_data = TS_data$time_data,
+                                   count_data = TS_data$count_data,
+                                   by_factor = TS_data$by_factor)
+      }
+
+      if(is.null(TS_data$by_factor)){
+        reported_data = data.frame(time_data = TS_data$time_data,
+                                   count_data = TS_data$count_data)
+      }
+
 
 
     temp_df <- data.frame(matrix(nrow = num_forecast, ncol = ncol(reported_data)))

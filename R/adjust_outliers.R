@@ -34,6 +34,12 @@ adjust_outliers <- function(count_data, time_data, by_factor = NULL, cooks_const
   # Construct time series data
   TS_data = make_ts_data(count_data, time_data, by_factor)
 
+  #### User checks ####
+  if (!(cooks_constant > 0)) {
+    stop("Bad value for cooks constant argument. Needs to be greater than 0")
+  }
+
+
   ######## Fit the count data to the three models ###########################
 
   nb_mod <- fit_negative_binomial(count_data = count_data, time_data = time_data, by_factor = by_factor,
